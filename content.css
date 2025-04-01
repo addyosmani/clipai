@@ -1,0 +1,55 @@
+.clipai-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+  z-index: 999990 !important;
+  cursor: crosshair !important;
+  display: none;
+  pointer-events: none !important;
+}
+
+.clipai-highlight {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 999991 !important;
+}
+
+.clipai-button-container {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+  pointer-events: none !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.clipai-button {
+  position: relative !important;
+  pointer-events: all !important;
+  white-space: nowrap !important;
+  background: #3b82f6 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.clipai-button:hover {
+  background: #2563eb !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15) !important;
+}

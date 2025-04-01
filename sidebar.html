@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipAI</title>
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <button id="bookmark-page" class="bookmark-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+        </svg>
+        Bookmark Page
+      </button>
+      <button id="clip-content" class="bookmark-button clip-content-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+        </svg>
+        Clip Content
+      </button>
+      <div class="search-container">
+        <input type="text" id="search" placeholder="Search clips...">
+      </div>
+      <div class="sort-container">
+        <select id="sort">
+          <option value="new">Newest First</option>
+          <option value="old">Oldest First</option>
+        </select>
+      </div>
+    </div>
+    <div id="clips-container"></div>
+  </div>
+  <script src="sidebar.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+let clips = [];
+let searchTerm = '';
+let sortOrder = 'new';
+let isClippingMode = false;
+
+async function loadClips() {
+  const data = await chrome.storage.sync.get('clipai_clips');
+  clips = data.clipai_clips || [];
+  renderClips();
+}
+
+function filterAndSortClips() {
+  let filtered = clips;
+  
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    filtered = clips.filter(clip => 
+      clip.metadata.title.toLowerCase().includes(term) ||
+      clip.metadata.keywords.some(k => k.toLowerCase().includes(term)) ||
+      (clip.content?.text || '').toLowerCase().includes(term)
+    );
+  }
+
+  return filtered.sort((a, b) => {
+    const aTime = new Date(a.timestamp).getTime();
+    const bTime = new Date(b.timestamp).getTime();
+    return sortOrder === 'new' ? bTime - aTime : aTime - bTime;
+  });
+}
+
+function createClipCard(clip) {
+  const card = document.createElement('div');
+  card.className = 'clip-card';
+
+  const preview = clip.content.image || clip.metadata.image;
+  let previewHtml = '';
+  
+  if (preview) {
+    previewHtml = `<img src="${preview}" class="clip-preview" alt="Preview">`;
+  } else if (clip.content.text) {
+    previewHtml = `<div class="clip-preview">
+      <p style="padding: 1rem; margin: 0;">${clip.content.text.substring(0, 150)}...</p>
+    </div>`;
+  }
+
+  card.innerHTML = `
+    ${previewHtml}
+    <div class="clip-content">
+      <div class="clip-title">${clip.metadata.title}</div>
+      <div class="clip-keywords">
+        ${clip.metadata.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
+      </div>
+      <div class="clip-date">${new Date(clip.timestamp).toLocaleDateString()}</div>
+    </div>
+  `;
+
+  card.addEventListener('click', () => {
+    // Extract URL from content if metadata URL is extension URL
+    let url = clip.metadata.url;
+    if (url.startsWith('chrome-extension://')) {
+      // Try to find a URL in the clipped content
+      const urlMatch = clip.content.text.match(/https?:\/\/[^\s<>"]+/);
+      if (urlMatch) {
+        url = urlMatch[0];
+      }
+    }
+    chrome.tabs.create({ url });
+  });
+
+  return card;
+}
+
+function renderClips() {
+  const container = document.getElementById('clips-container');
+  container.innerHTML = '';
+  
+  const filteredClips = filterAndSortClips();
+  filteredClips.forEach(clip => {
+    container.appendChild(createClipCard(clip));
+  });
+}
+
+async function handleBookmarkPage() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) throw new Error('No active tab found');
+    
+    // Inject content script
+    await chrome.runtime.sendMessage({ action: 'injectContentScript' });
+
+    // Create basic metadata from tab info first
+    let metadata = {
+      title: tab.title || '',
+      url: tab.url || '',
+      keywords: [],
+      image: tab.favIconUrl || ''
+    };
+
+    try {
+      // Try to get enhanced metadata from content script
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getMetadata' });
+      if (response?.metadata) {
+        metadata = {
+          ...metadata,
+          ...response.metadata,
+          // Ensure URL is always from tab to avoid chrome-extension:// URLs
+          url: tab.url || ''
+        };
+      }
+    } catch (error) {
+      console.log('Metadata extraction failed, using basic tab info:', error);
+    }
+
+    const clip = {
+      type: 'page',
+      metadata,
+      content: {
+        type: 'page',
+        text: metadata.title,
+        image: metadata.image
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    chrome.runtime.sendMessage({
+      action: 'saveClip',
+      data: clip
+    });
+
+    // Visual feedback
+    const button = document.getElementById('bookmark-page');
+    const originalText = button.innerHTML;
+    button.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+      </svg>
+      Bookmarked!
+    `;
+    
+    setTimeout(() => {
+      button.innerHTML = originalText;
+    }, 1500);
+  } catch (error) {
+    console.error('Error bookmarking page:', error);
+  }
+}
+
+async function toggleClipMode() {
+  try {
+    // Ensure content script is injected
+    await chrome.runtime.sendMessage({ action: 'injectContentScript' });
+
+    const clipButton = document.getElementById('clip-content');
+    isClippingMode = !isClippingMode;
+    
+    if (isClippingMode) {
+      clipButton.classList.add('active');
+      clipButton.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+        </svg>
+        Select Element
+      `;
+    } else {
+      clipButton.classList.remove('active');
+      clipButton.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+        </svg>
+        Clip Content
+      `;
+    }
+
+    // Send message to content script
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: 'toggleClipMode',
+        enabled: isClippingMode
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling clip mode:', error);
+  }
+}
+
+// Event Listeners
+document.getElementById('search').addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  renderClips();
+});
+
+document.getElementById('sort').addEventListener('change', (e) => {
+  sortOrder = e.target.value;
+  renderClips();
+});
+
+document.getElementById('bookmark-page').addEventListener('click', handleBookmarkPage);
+document.getElementById('clip-content').addEventListener('click', toggleClipMode);
+
+// Listen for messages
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action === 'clipAdded') {
+    loadClips();
+  } else if (message.action === 'clipModeExited') {
+    isClippingMode = false;
+    const clipButton = document.getElementById('clip-content');
+    clipButton.classList.remove('active');
+    clipButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+      </svg>
+      Clip Content
+    `;
+  }
+});
+
+// Initial load
+loadClips();
