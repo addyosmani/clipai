@@ -2,11 +2,25 @@ let isClippingMode = false;
 let currentElement = null;
 let clipButton = null;
 let overlay = null;
+let helperText = null;
 
 function createOverlay() {
   overlay = document.createElement('div');
   overlay.className = 'clipai-overlay';
+  
+  helperText = createHelperText();
+  overlay.appendChild(helperText);
+  
   document.body.appendChild(overlay);
+}
+
+function createHelperText() {
+  const helperText = document.createElement('div');
+  helperText.className = 'clipai-helper-text';
+  helperText.innerHTML = `
+      <p>Click on any element to clip it!</p>
+  `;
+  return helperText;
 }
 
 function createClipButton() {
@@ -82,6 +96,13 @@ function handleClip(event) {
     elementText = currentElement.innerText || currentElement.textContent;
   }
 
+  // Add zoom animation class
+  currentElement.classList.add('clipai-clipped');
+  currentElement.addEventListener('animationend', () => {
+    currentElement.classList.remove('clipai-clipped');
+  }, { once: true });
+  
+  
   const elementContent = {
     type: 'element',
     html: currentElement.outerHTML,
@@ -129,17 +150,23 @@ function handleMouseOver(event) {
   // Update current element
   currentElement = event.target;
   currentElement.classList.add('clipai-highlight');
+  
+  // Create or update helper text
+  // if (!helperText) {
+  //   helperText = createHelperText();
+  //   document.body.appendChild(helperText);
+  // }
 
-  // Create or update clip button
-  if (!clipButton) {
-    clipButton = createClipButton();
-    clipButton.querySelector('.clipai-button').addEventListener('click', handleClip);
-    document.body.appendChild(clipButton);
-  }
+  // // Create or update clip button
+  // if (!clipButton) {
+  //   clipButton = createClipButton();
+  //   clipButton.querySelector('.clipai-button').addEventListener('click', handleClip);
+  //   document.body.appendChild(clipButton);
+  // }
 
   // Add button container directly to the element
-  currentElement.style.position = 'relative';
-  currentElement.appendChild(clipButton);
+  // currentElement.style.position = 'relative';
+  // currentElement.appendChild(clipButton);
 }
 
 function handleMouseOut(event) {
@@ -171,6 +198,11 @@ function enterClippingMode() {
   if (!overlay) createOverlay();
   overlay.style.display = 'block';
   document.body.style.cursor = 'crosshair';
+  
+  // capture all click events
+  document.addEventListener('click', handleClip, {
+    capture: true
+  });
 }
 
 function exitClippingMode() {
@@ -187,6 +219,11 @@ function exitClippingMode() {
     currentElement = null;
   }
 
+  // remove click event listener
+  document.removeEventListener('click', handleClip, {
+    capture: true
+  });
+  
   // Notify sidebar to update UI
   chrome.runtime.sendMessage({ action: 'clipModeExited' });
 }

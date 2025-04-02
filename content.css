@@ -16,7 +16,8 @@
   outline-offset: 2px !important;
   cursor: pointer !important;
   position: relative !important;
-  z-index: 999991 !important;
+  z-index: 999990 !important;
+  pointer-events: all !important;
 }
 
 .clipai-button-container {
@@ -52,4 +53,24 @@
   background: #2563eb !important;
   transform: scale(1.05) !important;
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.clipai-helper-text {
+  background: rgb(255, 255, 255, 0.9) !important;
+  color: black !important;
+  font-size: 1rem !important;
+  font-weight: bold !important;
+  position: fixed !important;
+  padding: 0.5rem 1em !important;
+  /* margin: 0 auto !important; */
+  bottom: 1rem !important;
+}
+
+@keyframes clipai-clipped {
+  0% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.clipai-clipped {
+  animation: clipai-clipped 0.3s ease-out forwards;
 }
