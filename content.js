@@ -35,6 +35,38 @@ class PageMetaData {
   url = window.location.href;
   keywords = [];
   image = '';
+  
+  /**
+   * Creates an instance of PageMetaData.
+   */
+  constructor() {
+
+    // Extract meta keywords
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) {
+      this.keywords = metaKeywords.content.split(',').map(k => k.trim()).slice(0, 3);
+    }
+
+    // Try multiple meta image sources
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+    const msImage = document.querySelector('meta[name="msapplication-TileImage"]');
+
+    this.image = ogImage?.content || twitterImage?.content || msImage?.content || '';
+
+    // If no keywords found, generate from meta description or content
+    if (this.keywords.length === 0) {
+      const metaDesc = document.querySelector('meta[name="description"]')?.content;
+      const contentWords = (metaDesc || document.body.textContent)
+        .toLowerCase()
+        .split(/\W+/)
+        .filter(word => word.length > 3)
+        .filter((word, i, arr) => arr.indexOf(word) === i)
+        .slice(0, 3);
+      this.keywords = contentWords;
+    }
+
+  }
 }
 
 /**
@@ -90,41 +122,6 @@ function createOverlay() {
   document.body.appendChild(overlay);
 }
 
-/**
- * Extracts meta data from the page.
- * @returns {PageMetaData} The extracted metadata.
- */
-function extractMetadata() {
-  const metadata = new PageMetaData();
-
-  // Extract meta keywords
-  const metaKeywords = document.querySelector('meta[name="keywords"]');
-  if (metaKeywords) {
-    metadata.keywords = metaKeywords.content.split(',').map(k => k.trim()).slice(0, 3);
-  }
-
-  // Try multiple meta image sources
-  const ogImage = document.querySelector('meta[property="og:image"]');
-  const twitterImage = document.querySelector('meta[name="twitter:image"]');
-  const msImage = document.querySelector('meta[name="msapplication-TileImage"]');
-  
-  metadata.image = ogImage?.content || twitterImage?.content || msImage?.content || '';
-
-  // If no keywords found, generate from meta description or content
-  if (metadata.keywords.length === 0) {
-    const metaDesc = document.querySelector('meta[name="description"]')?.content;
-    const contentWords = (metaDesc || document.body.textContent)
-      .toLowerCase()
-      .split(/\W+/)
-      .filter(word => word.length > 3)
-      .filter((word, i, arr) => arr.indexOf(word) === i)
-      .slice(0, 3);
-    metadata.keywords = contentWords;
-  }
-
-  return metadata;
-}
-
 // #region Event Hanlders
 
 /**
@@ -138,7 +135,7 @@ function handleClipClick(event) {
   
   if (!currentElement) return;
 
-  const metadata = extractMetadata();
+  const metadata = new PageMetaData();
 
   // Add zoom animation class
   currentElement.classList.add('clipai-clipped');
