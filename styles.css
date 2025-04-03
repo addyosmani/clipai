@@ -131,3 +131,18 @@ body {
   color: #64748b;
   font-size: 0.875rem;
 }
+
+.clip-toolbar {
+  display: flex;
+  justify-content: space-between;
+}
+
+.clip-toolbar button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
