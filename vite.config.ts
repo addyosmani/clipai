@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
+    minify: false,
     rollupOptions: {
       input: {
         sidebar: resolve(__dirname, 'sidebar.html'),

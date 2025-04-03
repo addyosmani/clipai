@@ -23,6 +23,9 @@ let currentElement = null;
  */
 let overlay = null;
 
+const CLIP_HELPER_TEXT = "Click on any element to clip it.";
+const CLIP_HELPER_TEXT_CLIPPED = "Clipped!";
+
 // #endregion
 
 // #region Helper Classes
@@ -115,14 +118,27 @@ function createOverlay() {
   overlay.className = 'clipai-overlay';
   overlay.innerHTML = `
     <div class="clipai-helper-text">
-      <p>Click on any element to clip it!</p>
+      <p>${CLIP_HELPER_TEXT}</p>
     </div>
   `;
   
   document.body.appendChild(overlay);
 }
 
-// #region Event Hanlders
+/**
+ * Updates the helper text in the overlay.
+ * @param {string} text The text to display.
+ * @returns {void}
+ */
+function updateOverlayText(text) {
+  if (!overlay) return;
+  const helperText = overlay.querySelector('.clipai-helper-text p');
+  if (helperText) {
+    helperText.innerText = text;
+  }
+}
+
+// #region Event Handlers
 
 /**
  * Handles the click event to clip of the current element.
@@ -139,14 +155,17 @@ function handleClipClick(event) {
 
   // Add zoom animation class
   currentElement.classList.add('clipai-clipped');
-  currentElement.addEventListener('animationend', () => {
-    currentElement.classList.remove('clipai-clipped');
-  }, { once: true });
   
-  console.log('Clipping element:', currentElement);
+  // currentElement may be null by the time the animation ends
+  const lastElement = currentElement;
+  currentElement.addEventListener('animationend', () => {
+    lastElement.classList.remove('clipai-clipped');
+  }, { once: true });
   
   const elementContent = new ElementContent(currentElement);
   const elementText = elementContent.text;
+  
+  updateOverlayText(CLIP_HELPER_TEXT_CLIPPED);
   
   chrome.runtime.sendMessage({
     action: 'saveClip',
@@ -243,6 +262,7 @@ function exitClippingMode() {
   isClippingMode = false;
   if (overlay) overlay.style.display = 'none';
   document.body.style.cursor = '';
+  updateOverlayText(CLIP_HELPER_TEXT);
   
   if (currentElement) {
     currentElement.classList.remove('clipai-highlight');
