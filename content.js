@@ -143,9 +143,11 @@ function handleClipClick(event) {
     currentElement.classList.remove('clipai-clipped');
   }, { once: true });
   
+  console.log('Clipping element:', currentElement);
   
   const elementContent = new ElementContent(currentElement);
-
+  const elementText = elementContent.text;
+  
   chrome.runtime.sendMessage({
     action: 'saveClip',
     data: {
@@ -153,18 +155,13 @@ function handleClipClick(event) {
       metadata: {
         ...metadata,
         title: elementText.substring(0, 50) + (elementText.length > 50 ? '...' : ''),
-        image: elementImage || metadata.image
+        image: elementContent.image || metadata.image
       },
       content: elementContent,
       timestamp: new Date().toISOString()
     }
   });
 
-  // Visual feedback
-  const button = clipButton.querySelector('.clipai-button');
-  button.textContent = 'Clipped!';
-  button.style.backgroundColor = '#10B981';
-  
   setTimeout(() => {
     exitClippingMode();
   }, 1000);
@@ -214,10 +211,6 @@ function handleMouseOut(event) {
 
   if (currentElement) {
     currentElement.classList.remove('clipai-highlight');
-    if (clipButton && clipButton.parentNode) {
-      clipButton.parentNode.removeChild(clipButton);
-      clipButton = null;
-    }
     currentElement = null;
   }
 }
@@ -253,10 +246,6 @@ function exitClippingMode() {
   
   if (currentElement) {
     currentElement.classList.remove('clipai-highlight');
-    if (clipButton && clipButton.parentNode) {
-      clipButton.parentNode.removeChild(clipButton);
-      clipButton = null;
-    }
     currentElement = null;
   }
 
