@@ -1,47 +1,101 @@
-let isClippingMode = false;
-let currentElement = null;
-let clipButton = null;
-let overlay = null;
-let helperText = null;
+/**
+ * @fileoverview This script is injected into the page to create the UI for clipping elements.
+ * It handles the clipping functionality and communicates with the background script.
+ */
 
+// #region Global Variables
+
+/**
+ * Tracks if we're in clipping mode.
+ * @type {boolean}
+ */
+let isClippingMode = false;
+
+/**
+ * Tracks the element currently being hovered over.
+ * @type {HTMLElement|null}
+ */
+let currentElement = null;
+
+/**
+ * The page overlay element. When not in clipping mode this is null.
+ * @type {HTMLElement|null}
+ */
+let overlay = null;
+
+// #endregion
+
+// #region Helper Classes
+
+/**
+ * Class representing the metadata of the page.
+ */
+class PageMetaData {
+  title = document.title;
+  url = window.location.href;
+  keywords = [];
+  image = '';
+}
+
+/**
+ * Class representing the content of a clipped element.
+ */
+class ElementContent {
+  type = 'element';
+  html = '';
+  text = '';
+  image = '';
+  
+  /**
+   * Creates an instance of ElementContent.
+   * @param {HTMLElement} element The HTML element to extract content from.
+   */
+  constructor(element) {
+    this.html = element.outerHTML;
+    
+    const isImage = element.tagName === 'IMG';
+    
+    // Extract image -- note that an element may contain an image
+    this.image = isImage
+      ? element.src
+      : element.querySelector('img')?.src || '';
+      
+    // Extract text
+    this.text = (isImage
+      ? element.alt || 'Image'
+      : element.innerText || element.textContent
+    ).trim();
+  }
+
+}
+
+
+// #endregion
+
+
+/**
+ * Creates the semitransparent overlay for the entire page and appends
+ * it to the body. This includes the helper text.
+ * @returns {void}
+ */
 function createOverlay() {
   overlay = document.createElement('div');
   overlay.className = 'clipai-overlay';
-  
-  helperText = createHelperText();
-  overlay.appendChild(helperText);
+  overlay.innerHTML = `
+    <div class="clipai-helper-text">
+      <p>Click on any element to clip it!</p>
+    </div>
+  `;
   
   document.body.appendChild(overlay);
 }
 
-function createHelperText() {
-  const helperText = document.createElement('div');
-  helperText.className = 'clipai-helper-text';
-  helperText.innerHTML = `
-      <p>Click on any element to clip it!</p>
-  `;
-  return helperText;
-}
-
-function createClipButton() {
-  const container = document.createElement('div');
-  container.className = 'clipai-button-container';
-  
-  const button = document.createElement('button');
-  button.textContent = 'Clip This';
-  button.className = 'clipai-button';
-  
-  container.appendChild(button);
-  return container;
-}
-
+/**
+ * Extracts meta data from the page.
+ * @returns {PageMetaData} The extracted metadata.
+ */
 function extractMetadata() {
-  const metadata = {
-    title: document.title,
-    url: window.location.href,
-    keywords: [],
-    image: ''
-  };
+  const metadata = new PageMetaData();
 
   // Extract meta keywords
   const metaKeywords = document.querySelector('meta[name="keywords"]');
@@ -71,30 +125,20 @@ function extractMetadata() {
   return metadata;
 }
 
-function handleClip(event) {
+// #region Event Hanlders
+
+/**
+ * Handles the click event to clip of the current element.
+ * @param {MouseEvent} event The mouse event.
+ * @returns {void}
+ */
+function handleClipClick(event) {
   event.preventDefault();
   event.stopPropagation();
   
   if (!currentElement) return;
 
   const metadata = extractMetadata();
-
-  // Enhanced content extraction
-  let elementImage = '';
-  if (currentElement.tagName === 'IMG') {
-    elementImage = currentElement.src;
-  } else {
-    const img = currentElement.querySelector('img');
-    if (img) elementImage = img.src;
-  }
-
-  // Extract text content based on element type
-  let elementText = '';
-  if (currentElement.tagName === 'IMG') {
-    elementText = currentElement.alt || 'Image';
-  } else {
-    elementText = currentElement.innerText || currentElement.textContent;
-  }
 
   // Add zoom animation class
   currentElement.classList.add('clipai-clipped');
@@ -103,12 +147,7 @@ function handleClip(event) {
   }, { once: true });
   
   
-  const elementContent = {
-    type: 'element',
-    html: currentElement.outerHTML,
-    text: elementText.trim(),
-    image: elementImage
-  };
+  const elementContent = new ElementContent(currentElement);
 
   chrome.runtime.sendMessage({
     action: 'saveClip',
@@ -134,6 +173,11 @@ function handleClip(event) {
   }, 1000);
 }
 
+/**
+ * Handles mouse over event to highlight the current element.
+ * @param {MouseEvent} event The mouse event.
+ * @returns {void}
+ */
 function handleMouseOver(event) {
   if (!isClippingMode) return;
 
@@ -149,26 +193,14 @@ function handleMouseOver(event) {
 
   // Update current element
   currentElement = event.target;
-  currentElement.classList.add('clipai-highlight');
-  
-  // Create or update helper text
-  // if (!helperText) {
-  //   helperText = createHelperText();
-  //   document.body.appendChild(helperText);
-  // }
-
-  // // Create or update clip button
-  // if (!clipButton) {
-  //   clipButton = createClipButton();
-  //   clipButton.querySelector('.clipai-button').addEventListener('click', handleClip);
-  //   document.body.appendChild(clipButton);
-  // }
-
-  // Add button container directly to the element
-  // currentElement.style.position = 'relative';
-  // currentElement.appendChild(clipButton);
+  currentElement.classList.add('clipai-highlight');  
 }
 
+/**
+ * Handles mouse out event to remove highlight from the current element.
+ * @param {MouseEvent} event The mouse event.
+ * @returns {void}
+ */
 function handleMouseOut(event) {
   if (!isClippingMode) return;
 
@@ -193,6 +225,14 @@ function handleMouseOut(event) {
   }
 }
 
+// #endregion
+
+// #region Clipping Mode Toggles
+
+/**
+ * Enters clipping mode and sets up the overlay and event listeners.
+ * @returns {void}
+ */
 function enterClippingMode() {
   isClippingMode = true;
   if (!overlay) createOverlay();
@@ -200,11 +240,15 @@ function enterClippingMode() {
   document.body.style.cursor = 'crosshair';
   
   // capture all click events
-  document.addEventListener('click', handleClip, {
+  document.addEventListener('click', handleClipClick, {
     capture: true
   });
 }
 
+/**
+ * Exits clipping mode and cleans up the overlay and event listeners.
+ * @returns {void}
+ */
 function exitClippingMode() {
   isClippingMode = false;
   if (overlay) overlay.style.display = 'none';
@@ -220,7 +264,7 @@ function exitClippingMode() {
   }
 
   // remove click event listener
-  document.removeEventListener('click', handleClip, {
+  document.removeEventListener('click', handleClipClick, {
     capture: true
   });
   
@@ -239,6 +283,10 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
+// #endregion
+
+// #region Page Initialization
+
 // Initialize event listeners
 document.addEventListener('mouseover', handleMouseOver);
 document.addEventListener('mouseout', handleMouseOut);
@@ -249,3 +297,5 @@ window.addEventListener('unload', () => {
     overlay.parentNode.removeChild(overlay);
   }
 });
+
+// #endregion
