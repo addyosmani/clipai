@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
 import css from '@eslint/css';
+import json from '@eslint/json';
 import globals from 'globals';
 
 export default defineConfig([
@@ -44,5 +45,18 @@ export default defineConfig([
     rules: {
       "css/use-baseline": "off",
     }
+  },
+  {
+    files: ['*.json'],
+    ignores: ["package-lock.json"],
+    plugins: {
+      json,
+    },
+    language: 'json/json',
+    extends: ['json/recommended'],
+  },
+  {
+    files: ['tsconfig*.json'],
+    language: 'json/jsonc',
   }
 ]);
