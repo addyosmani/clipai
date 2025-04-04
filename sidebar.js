@@ -1,14 +1,30 @@
+/**
+ * @fileoverview The script that runs the sidebar for ClipAI.
+ */
+
+// #region Global Variables
+
 let clips = [];
 let searchTerm = '';
 let sortOrder = 'new';
 let isClippingMode = false;
 
+// #endregion
+
+/**
+ * Load clips from storage and render them.
+ * @returns {void}
+ */
 async function loadClips() {
   const data = await chrome.storage.sync.get('clipai_clips');
   clips = data.clipai_clips || [];
   renderClips();
 }
 
+/**
+ * Filter and sort clips based on search term and sort order.
+ * @returns {Array} Filtered and sorted clips.
+ */
 function filterAndSortClips() {
   let filtered = clips;
   
@@ -28,7 +44,24 @@ function filterAndSortClips() {
   });
 }
 
-function createClipCard(clip) {
+/**
+ * Delete a clip by its ID.
+ * @param {number} clipId The ID of the clip to delete.
+ * @returns {void}
+ */
+function deleteClip(clipId) {
+  clips.splice(clipId, 1);
+  chrome.storage.sync.set({ clipai_clips: clips });
+  renderClips();
+}
+
+/**
+ * Create a card element for a clip
+ * @param {Object} clip The clip object.
+ * @param {number} index The index of the clip. Used for deleting.
+ * @returns {HTMLElement} The card element.
+ */
+function createClipCard(clip, index) {
   const card = document.createElement('div');
   card.className = 'clip-card';
 
@@ -50,11 +83,28 @@ function createClipCard(clip) {
       <div class="clip-keywords">
         ${clip.metadata.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
       </div>
-      <div class="clip-date">${new Date(clip.timestamp).toLocaleDateString()}</div>
+      <div class="clip-toolbar">
+        <div class="clip-date">${new Date(clip.timestamp).toLocaleDateString()}</div>
+        <button class="delete-clip" title="Delete clip" data-clip-id="${index}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   `;
 
-  card.addEventListener('click', () => {
+  card.addEventListener('click', event => {
+    
+    if (event.target.matches('.delete-clip *')) {
+      const clipId = event.target.dataset.clipId;
+      deleteClip(clipId);
+      event.stopPropagation();
+      return;
+    }
+    
     // Extract URL from content if metadata URL is extension URL
     let url = clip.metadata.url;
     if (url.startsWith('chrome-extension://')) {
@@ -70,16 +120,24 @@ function createClipCard(clip) {
   return card;
 }
 
+/**
+ * Render the clips in the sidebar.
+ * @returns {void}
+ */
 function renderClips() {
   const container = document.getElementById('clips-container');
   container.innerHTML = '';
   
   const filteredClips = filterAndSortClips();
-  filteredClips.forEach(clip => {
-    container.appendChild(createClipCard(clip));
+  filteredClips.forEach((clip, index) => {
+    container.appendChild(createClipCard(clip, index));
   });
 }
 
+/**
+ * Bookmarks the entire page.
+ * @returns {void}
+ */
 async function handleBookmarkPage() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -145,6 +203,11 @@ async function handleBookmarkPage() {
   }
 }
 
+/**
+ * Toggles the clipping mode in the main content.
+ * @returns {void}
+ * @throws {Error} If content script injection fails.
+ */
 async function toggleClipMode() {
   try {
     // Ensure content script is injected
