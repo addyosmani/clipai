@@ -1,10 +1,24 @@
+/**
+ * @fileoverview Background script for the Chrome extension. 
+ * It handles storage, messaging, and script injection.
+ */
+
+// #region Constants
+
 const STORAGE_KEY = 'clipai_clips';
 const MAX_SYNC_BYTES = 102400; // 100KB limit for sync storage
+
+// #endregion
 
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId });
 });
 
+/**
+ * Saves clips to storage, either sync or local based on size.
+ * @param {Array<Object>} clips The clips to save.
+ * @returns {Promise<void>}
+ */
 async function saveToStorage(clips) {
   try {
     const bytes = new TextEncoder().encode(JSON.stringify(clips)).length;
@@ -20,6 +34,10 @@ async function saveToStorage(clips) {
   }
 }
 
+/**
+ * Retrieves clips from storage, prioritizing sync storage.
+ * @returns {Promise<Array<Object>>}
+ */
 async function getClips() {
   try {
     const syncData = await chrome.storage.sync.get(STORAGE_KEY);
@@ -34,9 +52,31 @@ async function getClips() {
   }
 }
 
-// Inject content script when needed
+/**
+ * Checks if the content script is already injected.
+ * @param {number} tabId The ID of the tab to check.
+ * @returns {Promise<boolean>}
+ */
+async function scriptAlreadyInjected(tabId) {
+  const result = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => !!document.querySelector('.clipai-script-injected')
+  });
+  return result[0].result;
+}
+
+/**
+ * Injects the content script and CSS into the active tab.
+ * @param {number} tabId The ID of the tab to inject into.
+ * @returns {Promise<void>}
+ */
 async function injectContentScript(tabId) {
   try {
+    
+    if (scriptAlreadyInjected(tabId)) {
+      return;
+    }
+    
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ['content.js']

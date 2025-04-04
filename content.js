@@ -107,6 +107,7 @@ class ElementContent {
 
 // #endregion
 
+// #region Helper Functions
 
 /**
  * Creates the semitransparent overlay for the entire page and appends
@@ -137,6 +138,8 @@ function updateOverlayText(text) {
     helperText.innerText = text;
   }
 }
+
+// #endregion
 
 // #region Event Handlers
 
@@ -303,5 +306,8 @@ window.addEventListener('unload', () => {
     overlay.parentNode.removeChild(overlay);
   }
 });
+
+// Add class so we can tell if the script has already been injected
+document.body.classList.add('clipai-script-injected');
 
 // #endregion
