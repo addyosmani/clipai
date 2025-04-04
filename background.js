@@ -21,12 +21,7 @@ chrome.action.onClicked.addListener((tab) => {
  */
 async function saveToStorage(clips) {
   try {
-    const bytes = new TextEncoder().encode(JSON.stringify(clips)).length;
-    if (bytes < MAX_SYNC_BYTES) {
-      await chrome.storage.sync.set({ [STORAGE_KEY]: clips });
-    } else {
-      await chrome.storage.local.set({ [STORAGE_KEY]: clips });
-    }
+    await chrome.storage.local.set({ [STORAGE_KEY]: clips });
   } catch (error) {
     console.error('Storage error:', error);
     // Fallback to local storage
@@ -40,10 +35,6 @@ async function saveToStorage(clips) {
  */
 async function getClips() {
   try {
-    const syncData = await chrome.storage.sync.get(STORAGE_KEY);
-    if (syncData[STORAGE_KEY]) {
-      return syncData[STORAGE_KEY];
-    }
     const localData = await chrome.storage.local.get(STORAGE_KEY);
     return localData[STORAGE_KEY] || [];
   } catch (error) {

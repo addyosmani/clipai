@@ -16,7 +16,7 @@ let isClippingMode = false;
  * @returns {void}
  */
 async function loadClips() {
-  const data = await chrome.storage.sync.get('clipai_clips');
+  const data = await chrome.storage.local.get('clipai_clips');
   clips = data.clipai_clips || [];
   renderClips();
 }
@@ -51,7 +51,7 @@ function filterAndSortClips() {
  */
 function deleteClip(clipId) {
   clips.splice(clipId, 1);
-  chrome.storage.sync.set({ clipai_clips: clips });
+  chrome.storage.local.set({ clipai_clips: clips });
   renderClips();
 }
 
