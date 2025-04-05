@@ -1,28 +1,62 @@
+import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
+import css from '@eslint/css';
+import json from '@eslint/json';
 import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
-  { ignores: ['dist'] },
+export default defineConfig([
+  globalIgnores(['dist']),
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-    },
+    files: ['**/*.js'],
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      js,
     },
+    extends: ['js/recommended'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        chrome: 'readonly',
+      }
+    }
+  },
+  {
+    files: ['scripts/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
+    }
+  },
+  {
+    files: ['content.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser
+      }
+    }
+  },
+  {
+    files: ['*.css'],
+    plugins: {
+      css,
+    },
+    language: 'css/css',
+    extends: ['css/recommended'],
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      "css/use-baseline": "off",
+    }
+  },
+  {
+    files: ['*.json'],
+    ignores: ["package-lock.json"],
+    plugins: {
+      json,
     },
+    language: 'json/json',
+    extends: ['json/recommended'],
+  },
+  {
+    files: ['tsconfig*.json'],
+    language: 'json/jsonc',
   }
-);
+]);

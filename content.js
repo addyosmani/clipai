@@ -192,7 +192,7 @@ function exitClippingMode() {
 }
 
 // Listen for messages from the sidebar
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message.action === 'toggleClipMode') {
     if (message.enabled) {
       enterClippingMode();
