@@ -38,6 +38,7 @@ class PageMetaData {
   url = window.location.href;
   keywords = [];
   image = '';
+  content = '';
   
   /**
    * Creates an instance of PageMetaData.
@@ -67,6 +68,7 @@ class PageMetaData {
         .filter((word, i, arr) => arr.indexOf(word) === i)
         .slice(0, 3);
       this.keywords = contentWords;
+      this.content = getMainContent();
     }
 
   }
@@ -108,6 +110,48 @@ class ElementContent {
 // #endregion
 
 // #region Helper Functions
+
+/**
+ * Gets the main content of the page.
+ * @returns {string} The main content of the page.
+ */
+function getMainContent() {
+  // Elements likely to contain main content
+  const contentElements = document.querySelectorAll('main, [role="main"], article, .main, #main, .content, #content, .post, .article');
+
+  // If no designated content areas, look at all major blocks
+  const blocks = contentElements.length > 0 ?
+    contentElements :
+    document.querySelectorAll('div, section');
+
+  let bestBlock = null;
+  let maxScore = 0;
+
+  blocks.forEach(block => {
+    // Skip unwanted elements
+    if (block.matches('a[href], nav, header, footer, .nav, .header, .footer, [role="navigation"], [role="banner"], [role="contentinfo"], pre, code, .ad, .advertisement, .pagination, img, table, ol, ul, figure')) {
+      return;
+    }
+
+    // Calculate text density score
+    const text = block.textContent;
+    const links = block.getElementsByTagName('a');
+    const linkDensity = links.length === 0 ? 0 : links.length / text.length;
+
+    // Score based on text length and link density
+    const score = text.length * (1 - linkDensity);
+
+    if (score > maxScore) {
+      maxScore = score;
+      bestBlock = block;
+    }
+  });
+
+  const textContent = bestBlock ? bestBlock.textContent.trim() : document.body.textContent.trim();
+  
+  // collapse whitespace
+  return textContent.replace(/\s+/g, ' ').trim();
+}
 
 /**
  * Creates the semitransparent overlay for the entire page and appends

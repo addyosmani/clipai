@@ -281,6 +281,58 @@ function toggleClipMode() {
 }
 
 // Event Listeners
+async function handleSummarize() {
+  
+  // get the page content for the first five clips
+  const clipsToSummarize = clips.slice(0, 5);
+  const webpages = new Set();
+  const content = clipsToSummarize
+  
+    // dedupe by URL to avoid duplicate content
+    .filter(clip => {
+      if (webpages.has(clip.metadata.url)) {
+        webpages.add(clip.metadata.url);
+        return true;
+      }
+      
+      return false;
+    }).map(clip => clip.metadata.content).join('\n');
+  
+  // const summarizer = await chrome.aiOriginTrial.summarizer.create({
+  //   format: 'plain-text',
+  //   type: 'tl;dr',
+  //   monitor(m) {
+  //     m.addEventListener('downloadprogress', (e) => {
+  //       console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+  //     });
+  //   }
+  // });
+
+  // const longText = document.querySelector('article').innerHTML;
+  // const summary = await summarizer.summarize(longText, {
+  //   context: 'A collection of webpages visited recently.',
+  // });
+  
+  // Mock summary for demonstration
+  const summary = 'This is a mock summary of the selected clips.';
+  
+  document.getElementById('app').classList.add('summarizing');
+  document.getElementById('clips-container').innerHTML = `
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>${summary}</p>
+      <button id="close-summary">Close</button>
+    </div>
+  `;
+  
+  document.getElementById('close-summary').addEventListener('click', () => {
+    document.getElementById('app').classList.remove('summarizing');
+    renderClips();
+  }, { once: true });
+}
+
+// #region Event Handlers
+
 document.getElementById('search').addEventListener('input', (e) => {
   searchTerm = e.target.value;
   renderClips();
@@ -293,6 +345,9 @@ document.getElementById('sort').addEventListener('change', (e) => {
 
 document.getElementById('bookmark-page').addEventListener('click', handleBookmarkPage);
 document.getElementById('clip-content').addEventListener('click', toggleClipMode);
+document.getElementById('summarize').addEventListener('click', () => {
+  handleSummarize();
+});
 
 document.addEventListener('keydown', handleEscapeKey, {
   capture: true,
@@ -306,6 +361,8 @@ chrome.runtime.onMessage.addListener((message) => {
     exitClipMode();
   }
 });
+
+// #endregion
 
 // Initial load
 loadClips();
