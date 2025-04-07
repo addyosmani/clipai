@@ -65,8 +65,11 @@ async function injectContentScript(tabId) {
   try {
     
     if (scriptAlreadyInjected(tabId)) {
+      console.log("InjectContentScript: Script was already injected.");
       return;
     }
+
+    console.log("InjectContentScript: Injecting content script.");
     
     await chrome.scripting.executeScript({
       target: { tabId },
