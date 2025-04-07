@@ -1,6 +1,6 @@
 /**
  * @fileoverview Background script for the Chrome extension. 
- * It handles storage, messaging, and script injection.
+ * It handles storage and messaging.
  */
 
 // #region Constants
@@ -43,47 +43,6 @@ async function getClips() {
   }
 }
 
-/**
- * Checks if the content script is already injected.
- * @param {number} tabId The ID of the tab to check.
- * @returns {Promise<boolean>}
- */
-async function scriptAlreadyInjected(tabId) {
-  const result = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => !!document.querySelector('.clipai-script-injected')
-  });
-  return result[0].result;
-}
-
-/**
- * Injects the content script and CSS into the active tab.
- * @param {number} tabId The ID of the tab to inject into.
- * @returns {Promise<void>}
- */
-async function injectContentScript(tabId) {
-  try {
-    
-    if (scriptAlreadyInjected(tabId)) {
-      console.log("InjectContentScript: Script was already injected.");
-      return;
-    }
-
-    console.log("InjectContentScript: Injecting content script.");
-    
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['content.js']
-    });
-    await chrome.scripting.insertCSS({
-      target: { tabId },
-      files: ['content.css']
-    });
-  } catch (error) {
-    console.error('Error injecting content script:', error);
-  }
-}
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'saveClip') {
     getClips().then(clips => {
@@ -93,21 +52,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Notify sidebar to update
       chrome.runtime.sendMessage({ action: 'clipAdded' });
     });
-    return true; // Keep message channel open
-  } else if (message.action === 'injectContentScript') {
-    chrome.tabs.query({ active: true, currentWindow: true })
-      .then(([tab]) => {
-        if (tab) {
-          return injectContentScript(tab.id);
-        }
-      })
-      .then(() => {
-        sendResponse({ success: true });
-      })
-      .catch(error => {
-        console.error('Injection error:', error);
-        sendResponse({ success: false, error: error.message });
-      });
     return true; // Keep message channel open
   } else if (message.action === 'getMetadata') {
     // Forward metadata requests to content script

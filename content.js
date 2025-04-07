@@ -307,7 +307,4 @@ window.addEventListener('unload', () => {
   }
 });
 
-// Add class so we can tell if the script has already been injected
-document.body.classList.add('clipai-script-injected');
-
 // #endregion
