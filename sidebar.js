@@ -16,7 +16,7 @@ let isClippingMode = false;
  * @returns {void}
  */
 async function loadClips() {
-  const data = await chrome.storage.sync.get('clipai_clips');
+  const data = await chrome.storage.local.get('clipai_clips');
   clips = data.clipai_clips || [];
   renderClips();
 }
@@ -51,7 +51,7 @@ function filterAndSortClips() {
  */
 function deleteClip(clipId) {
   clips.splice(clipId, 1);
-  chrome.storage.sync.set({ clipai_clips: clips });
+  chrome.storage.local.set({ clipai_clips: clips });
   renderClips();
 }
 
@@ -143,9 +143,6 @@ async function handleBookmarkPage() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error('No active tab found');
     
-    // Inject content script
-    await chrome.runtime.sendMessage({ action: 'injectContentScript' });
-
     // Create basic metadata from tab info first
     let metadata = {
       title: tab.title || '',
@@ -206,12 +203,9 @@ async function handleBookmarkPage() {
 /**
  * Toggles the clipping mode in the main content.
  * @returns {void}
- * @throws {Error} If content script injection fails.
  */
 async function toggleClipMode() {
   try {
-    // Ensure content script is injected
-    await chrome.runtime.sendMessage({ action: 'injectContentScript' });
 
     const clipButton = document.getElementById('clip-content');
     isClippingMode = !isClippingMode;
