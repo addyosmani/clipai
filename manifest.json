@@ -7,7 +7,8 @@
     "storage",
     "activeTab",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "aiLanguageModelOriginTrial"
   ],
   "host_permissions": [
     "https://*/*"
@@ -33,7 +34,7 @@
     "128": "icons/icon128.png"
   },
   "trial_tokens": [
-    "A3ikHRZw0zUbUSQEF/DAFY+OjhpCs9GRY0FDiwgTWbwaKYsqLy6tCwT3sI76AsJZLuRtXO/M1OEoOAypTkfZ2wwAAACMeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ21rbmlvZWZkcGhpa2NkY2ZsZGxtbWhrb2ZqZmticGkiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElGb3JFeHRlbnNpb24iLCJleHBpcnkiOjE3NjA0ODYzOTksImlzVGhpcmRQYXJ0eSI6dHJ1ZX0=",
-    "A3HdnfP99gliR7PQpMLG64HRroGn+JoH1dQfKQFBb9M8bKDeOIyxz3LhL+V55Xk477UtTVP4AFCX1M3oILNIAQYAAACHeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ21rbmlvZWZkcGhpa2NkY2ZsZGxtbWhrb2ZqZmticGkiLCJmZWF0dXJlIjoiQUlTdW1tYXJpemF0aW9uQVBJIiwiZXhwaXJ5IjoxNzUzMTQyNDAwLCJpc1RoaXJkUGFydHkiOnRydWV9"
+    "AiYw3aK3RkfCh4Xkt8h9yRuvAixrVXrEJ7jiHJidXfWt+RjJY60dmv9tljhpTdYnrNS1rhpgeXSsBIOpttKyhQsAAAB4eyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ21rbmlvZWZkcGhpa2NkY2ZsZGxtbWhrb2ZqZmticGkiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElGb3JFeHRlbnNpb24iLCJleHBpcnkiOjE3NjA0ODYzOTl9",
+    "AhznOliif5hqjD8FEz5ofb326oo4E4PNkjCfUOJK0I963iYtTketxgDZ842KdMmBACJn9GwRBaoAlR44dA8e1w8AAABzeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ21rbmlvZWZkcGhpa2NkY2ZsZGxtbWhrb2ZqZmticGkiLCJmZWF0dXJlIjoiQUlTdW1tYXJpemF0aW9uQVBJIiwiZXhwaXJ5IjoxNzUzMTQyNDAwfQ=="
   ]
 }

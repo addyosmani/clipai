@@ -290,15 +290,25 @@ async function handleSummarize() {
   
     // dedupe by URL to avoid duplicate content
     .filter(clip => {
-      if (webpages.has(clip.metadata.url)) {
+      if (!webpages.has(clip.metadata.url)) {
         webpages.add(clip.metadata.url);
         return true;
       }
       
       return false;
-    }).map(clip => clip.metadata.content).join('\n');
-  
-  // const summarizer = await chrome.aiOriginTrial.summarizer.create({
+    }).map(clip => clip.metadata.content).join('\n\n');
+    
+  const session = await chrome.aiOriginTrial.languageModel.create({
+    systemPrompt: "You are a summarizer. A user has visited a collection of webpages and wants a summary of everything they have viewed. The content is given in plain text.",
+    monitor(m) {
+      m.addEventListener("downloadprogress", (e) => {
+        console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+      });
+    },
+  });
+  const summary = await session.prompt(content);
+
+  // const summarizer = await ai.summarizer.create({
   //   format: 'plain-text',
   //   type: 'tl;dr',
   //   monitor(m) {
@@ -308,26 +318,17 @@ async function handleSummarize() {
   //   }
   // });
 
-  // const longText = document.querySelector('article').innerHTML;
-  // const summary = await summarizer.summarize(longText, {
+  // const summary = await summarizer.summarize(content, {
   //   context: 'A collection of webpages visited recently.',
   // });
   
-  // Mock summary for demonstration
-  const summary = 'This is a mock summary of the selected clips.';
-  
   document.getElementById('app').classList.add('summarizing');
-  document.getElementById('clips-container').innerHTML = `
-    <div class="summary">
-      <h2>Summary</h2>
-      <p>${summary}</p>
-      <button id="close-summary">Close</button>
-    </div>
+  document.getElementById('summary-content').innerHTML = `
+    <p>${summary}</p>
   `;
   
   document.getElementById('close-summary').addEventListener('click', () => {
     document.getElementById('app').classList.remove('summarizing');
-    renderClips();
   }, { once: true });
 }
 

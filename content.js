@@ -146,11 +146,17 @@ function getMainContent() {
       bestBlock = block;
     }
   });
-
-  const textContent = bestBlock ? bestBlock.textContent.trim() : document.body.textContent.trim();
   
+  const mainContent = bestBlock ? bestBlock : document.body;
+  const mainContentClone = mainContent.cloneNode(true);
+  
+  console.log("Scripts and styles", mainContentClone.querySelectorAll('script, style'));
+  
+  // Remove scripts and styles
+  mainContentClone.querySelectorAll('script, style').forEach(el => el.remove());
+
   // collapse whitespace
-  return textContent.replace(/\s+/g, ' ').trim();
+  return mainContentClone.textContent.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -213,7 +219,7 @@ function handleClipClick(event) {
   const elementText = elementContent.text;
   
   updateOverlayText(CLIP_HELPER_TEXT_CLIPPED);
-  
+  console.log(metadata.content);
   chrome.runtime.sendMessage({
     action: 'saveClip',
     data: {
