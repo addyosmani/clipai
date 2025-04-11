@@ -242,6 +242,18 @@ function handleMouseOut(event) {
 // #region Clipping Mode Toggles
 
 /**
+ * Handles escape key press to exit clipping mode
+ * @param {KeyboardEvent} event The keyboard event
+ */
+function handleEscapeKey(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    exitClippingMode();
+  }
+}
+
+/**
  * Enters clipping mode and sets up the overlay and event listeners.
  * @returns {void}
  */
@@ -253,6 +265,11 @@ function enterClippingMode() {
   
   // capture all click events
   document.addEventListener('click', handleClipClick, {
+    capture: true
+  });
+  
+  // Add escape key handler with capture
+  window.addEventListener('keydown', handleEscapeKey, {
     capture: true
   });
 }
@@ -272,8 +289,11 @@ function exitClippingMode() {
     currentElement = null;
   }
 
-  // remove click event listener
+  // remove event listeners
   document.removeEventListener('click', handleClipClick, {
+    capture: true
+  });
+  window.removeEventListener('keydown', handleEscapeKey, {
     capture: true
   });
   
