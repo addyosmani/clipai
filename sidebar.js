@@ -298,6 +298,8 @@ async function handleSummarize() {
       return false;
     }).map(clip => clip.metadata.content).join('\n\n');
     
+    console.log(await chrome.aiOriginTrial.languageModel.capabilities());
+    
   const session = await chrome.aiOriginTrial.languageModel.create({
     systemPrompt: "You are a summarizer. A user has visited a collection of webpages and wants a summary of everything they have viewed. The content is given in plain text.",
     monitor(m) {
@@ -306,7 +308,7 @@ async function handleSummarize() {
       });
     },
   });
-  const summary = await session.prompt(content);
+  // const summary = await session.prompt(content);
 
   // const summarizer = await ai.summarizer.create({
   //   format: 'plain-text',
