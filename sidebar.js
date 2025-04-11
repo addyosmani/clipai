@@ -258,18 +258,21 @@ async function handleSummarize() {
       return false;
     }).map(clip => clip.metadata.content).join('\n\n');
     
-    console.log(await chrome.aiOriginTrial.languageModel.capabilities());
+    // console.log(await chrome.aiOriginTrial.languageModel.capabilities());
     
   const session = await chrome.aiOriginTrial.languageModel.create({
-    systemPrompt: "You are a summarizer. A user has visited a collection of webpages and wants a summary of everything they have viewed. The content is given in plain text.",
+    systemPrompt: "You are a summarizer. A user has visited a collection of webpages and wants a summary of everything they have viewed. The content is given in plain text. Produce output in plain text that is no longer than 3000 characters.",
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
         console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
       });
     },
   });
-  // const summary = await session.prompt(content);
-
+  
+  console.log("Summarizing content...");
+  const start = Date.now();
+  const summary = await session.prompt(content);
+  console.log("Summary received:", Date.now() - start, summary);
   // const summarizer = await ai.summarizer.create({
   //   format: 'plain-text',
   //   type: 'tl;dr',
