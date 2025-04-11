@@ -53,6 +53,22 @@ npm run build
 # 4. Select the `dist` directory
 ```
 
+### Create a Consistent Key
+
+The Chrome extension ID may change between sessions, making it difficult to use origin trial tokens. To create a consistent key:
+
+1. Load the extension as described above.
+2. Click "Pack extension" and select the `dist` directory. This will generate a `dist.pem` file.
+3. Run the following to output a public key:
+    ```shell
+    openssl rsa -in key.pem -pubout -outform DER | openssl base64 -A
+    ```
+4. Copy the output into the `key` key of `manifest.json`.
+5. Run `npm run build`.
+6. Reload the extension in Chrome.
+
+The ID assigned to your extension will now remain consistent.
+
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) first.
