@@ -9,6 +9,26 @@ let searchTerm = '';
 let sortOrder = 'new';
 let isClippingMode = false;
 
+const SUMMARIZE_LOADING = `
+<div class="summarize-loading">
+  <svg class="loading-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L15 12L12 22L9 12L12 2Z" fill="currentColor" />
+    <path d="M2 12L12 15L22 12L12 9L2 12Z" fill="currentColor" />
+  </svg>
+  <p id="loading-status">Summarizing...</p>
+</div>
+`;
+
+const SYSTEM_PROMPT = `
+"You are a summarizer that creates clear, concise, short summaries of articles.
+
+You will be given content from a webpage content. Produce a one-paragraph summary for
+each webpage. The maximum length of the paragraph is 5 sentences and must be
+written in the third person.
+
+Produce output in plain text.
+`;
+
 // #endregion
 
 /**
@@ -286,6 +306,7 @@ async function handleSummarize() {
   // get the page content for the first five clips
   const clipsToSummarize = clips.slice(0, 5);
   const webpages = new Set();
+  const controller = new AbortController();
   const content = clipsToSummarize
   
     // dedupe by URL to avoid duplicate content
@@ -297,22 +318,54 @@ async function handleSummarize() {
       
       return false;
     }).map(clip => clip.metadata.content).join('\n\n');
-    
-    // console.log(await chrome.aiOriginTrial.languageModel.capabilities());
-    
+  
+  // setup summarize UI
+  document.getElementById('summary-content').innerHTML = SUMMARIZE_LOADING;
+  document.getElementById('app').classList.add('summarizing');  
+  document.getElementById('close-summary').addEventListener('click', () => {
+    document.getElementById('app').classList.remove('summarizing');
+    controller.abort();
+  }, { once: true });
+  
+  console.log("Content to summarize: ", content);
+  
+  // generate the content
   const session = await chrome.aiOriginTrial.languageModel.create({
-    systemPrompt: "You are a summarizer. A user has visited a collection of webpages and wants a summary of everything they have viewed. The content is given in plain text. Produce output in plain text that is no longer than 3000 characters.",
+    systemPrompt: SYSTEM_PROMPT,
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
-        console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+        const percentage = Math.round((e.loaded / e.total) * 100);
+        document.getElementById("loading-status").innerText = `Downloading model (${percentage}%)`;
       });
     },
+    signal: controller.signal
   });
   
   console.log("Summarizing content...");
+  document.getElementById("loading-status").innerText = "Summarizing...";
+
   const start = Date.now();
-  const summary = await session.prompt(content);
+  
+  let summary = '';
+  // let previousChunk = '';
+
+  // for await (const chunk of session.promptStreaming(content)) {
+  //   const newChunk = chunk.startsWith(previousChunk)
+  //     ? chunk.slice(previousChunk.length) : chunk;
+  //   console.log(newChunk);
+  //   summary += newChunk;
+  //   previousChunk = chunk;
+    
+  //   document.getElementById('summary-content').innerHTML = `
+  //     <p>${summary}</p>
+  //   `;     
+  // }
+  // console.log(summary);
+
+  summary = await session.prompt(content);
   console.log("Summary received:", Date.now() - start, summary);
+  
+  
   // const summarizer = await ai.summarizer.create({
   //   format: 'plain-text',
   //   type: 'tl;dr',
@@ -326,15 +379,11 @@ async function handleSummarize() {
   // const summary = await summarizer.summarize(content, {
   //   context: 'A collection of webpages visited recently.',
   // });
-  
-  document.getElementById('app').classList.add('summarizing');
+
   document.getElementById('summary-content').innerHTML = `
     <p>${summary}</p>
   `;
   
-  document.getElementById('close-summary').addEventListener('click', () => {
-    document.getElementById('app').classList.remove('summarizing');
-  }, { once: true });
 }
 
 // #region Event Handlers
