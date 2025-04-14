@@ -150,10 +150,8 @@ function getMainContent() {
   const mainContent = bestBlock ? bestBlock : document.body;
   const mainContentClone = mainContent.cloneNode(true);
   
-  console.log("Scripts and styles", mainContentClone.querySelectorAll('script, style'));
-  
-  // Remove scripts and styles
-  mainContentClone.querySelectorAll('script, style').forEach(el => el.remove());
+  // Remove unwanted content
+  mainContentClone.querySelectorAll('script, style, pre, picture, aside').forEach(el => el.remove());
 
   // collapse whitespace
   return mainContentClone.textContent.replace(/\s+/g, ' ').trim();
