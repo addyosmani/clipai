@@ -20,10 +20,10 @@ const SUMMARIZE_LOADING = `
 `;
 
 const SYSTEM_PROMPT = `
-"You are a summarizer that creates clear, concise, short summaries of articles.
+You are a summarizer that creates clear, concise, short summaries of articles.
 
-You will be given content from a webpage content. Produce a one-paragraph summary for
-each webpage. The maximum length of the paragraph is 5 sentences and must be
+You will be given content from a webpage content. Produce a one-paragraph summary.
+The maximum length of the paragraph is 5 sentences and must be
 written in the third person.
 
 Produce output in plain text.
@@ -264,49 +264,77 @@ async function toggleClipMode() {
 async function handleSummarize() {
   
   // get the page content for the first five clips
-  const clipsToSummarize = clips.slice(0, 5);
   const webpages = new Set();
-  const controller = new AbortController();
-  const content = clipsToSummarize
-  
+  const clipsToSummarize = clips.slice(0, 5)
     // dedupe by URL to avoid duplicate content
     .filter(clip => {
+      console.log("Hi", clip.metadata.url);
       if (!webpages.has(clip.metadata.url)) {
         webpages.add(clip.metadata.url);
         return true;
       }
-      
+
       return false;
-    }).map(clip => clip.metadata.content).join('\n\n');
+    });
+  const controller = new AbortController();
   
   // setup summarize UI
   document.getElementById('summary-content').innerHTML = SUMMARIZE_LOADING;
-  document.getElementById('app').classList.add('summarizing');  
+  document.getElementById('app').classList.add('summarizing');
   document.getElementById('close-summary').addEventListener('click', () => {
     document.getElementById('app').classList.remove('summarizing');
     controller.abort();
   }, { once: true });
-  
-  console.log("Content to summarize: ", content);
-  
-  // generate the content
+  const loadingStatus = document.getElementById("loading-status");
+
+  // create the session
   const session = await chrome.aiOriginTrial.languageModel.create({
     systemPrompt: SYSTEM_PROMPT,
     monitor(m) {
       m.addEventListener("downloadprogress", (e) => {
         const percentage = Math.round((e.loaded / e.total) * 100);
-        document.getElementById("loading-status").innerText = `Downloading model (${percentage}%)`;
+        loadingStatus.innerText = `Downloading model (${percentage}%)`;
       });
     },
     signal: controller.signal
   });
   
-  console.log("Summarizing content...");
-  document.getElementById("loading-status").innerText = "Summarizing...";
-
   const start = Date.now();
   
-  let summary = '';
+  console.log("Summarizing webpages...");
+  loadingStatus.innerText = "Summarizing webpages...";
+  
+  const summaries = [];
+  
+  // have to do this one at a time because session.prompt() won't parallelize
+  for (const pageSummary of clipsToSummarize) {
+    
+    summaries.push(await session.prompt(pageSummary.metadata.content, {
+      signal: controller.signal
+    }).catch(err => {
+      console.error("Error summarizing webpage:", err);
+      return undefined;
+    }));
+    
+  }
+
+  if (controller.signal.aborted) {
+    console.log("Summarization aborted");
+    return;
+  }
+  
+  
+  console.log("Summaries received:", Date.now() - start, summaries);
+  console.log("Generating overall summary...");
+  loadingStatus.innerHTML = "Generating overall summary...";
+  
+  const content = summaries.join('\n\n');
+  const summary = await session.prompt(`Summarize these paragraphs into a single paragraph of no more than five sentences:\n\n${content}`, {
+    signal: controller.signal
+  });
+  
+  
+  // let summary = '';
   // let previousChunk = '';
 
   // for await (const chunk of session.promptStreaming(content)) {
@@ -322,8 +350,7 @@ async function handleSummarize() {
   // }
   // console.log(summary);
 
-  summary = await session.prompt(content);
-  console.log("Summary received:", Date.now() - start, summary);
+  console.log("Overall summary received:", Date.now() - start, summary);
   
   
   // const summarizer = await ai.summarizer.create({
@@ -340,9 +367,11 @@ async function handleSummarize() {
   //   context: 'A collection of webpages visited recently.',
   // });
 
-  document.getElementById('summary-content').innerHTML = `
-    <p>${summary}</p>
-  `;
+  if (!controller.signal.aborted) {
+    document.getElementById('summary-content').innerHTML = `
+      <p>${summary}</p>
+    `;
+  }
   
 }
 
