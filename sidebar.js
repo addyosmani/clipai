@@ -287,10 +287,13 @@ async function handleSummarize() {
   const loadingStatus = document.getElementById("loading-status");
 
   // create the session
-  const session = await chrome.aiOriginTrial.languageModel.create({
-    systemPrompt: SYSTEM_PROMPT,
+  const session = await Summarizer.create({
+    format: 'plain-text',
+    type: 'tl;dr',
+    sharedContext: "An article from a webpage.",
+    length: "medium",
     monitor(m) {
-      m.addEventListener("downloadprogress", (e) => {
+      m.addEventListener('downloadprogress', (e) => {
         const percentage = Math.round((e.loaded / e.total) * 100);
         loadingStatus.innerText = `Downloading model (${percentage}%)`;
       });
@@ -307,8 +310,9 @@ async function handleSummarize() {
   
   // have to do this one at a time because session.prompt() won't parallelize
   for (const pageSummary of clipsToSummarize) {
-    
-    summaries.push(await session.prompt(pageSummary.metadata.content, {
+    console.log("Summarizing", pageSummary.metadata.title);
+    console.log(pageSummary.metadata.content);
+    summaries.push(await session.summarize(pageSummary.metadata.content, {
       signal: controller.signal
     }).catch(err => {
       console.error("Error summarizing webpage:", err);
@@ -328,43 +332,11 @@ async function handleSummarize() {
   loadingStatus.innerHTML = "Generating overall summary...";
   
   const content = summaries.filter(Boolean).join('\n\n');
-  const summary = await session.prompt(`Summarize these paragraphs into a single paragraph of no more than five sentences:\n\n${content}`, {
+  const summary = await session.summarize(content, {
     signal: controller.signal
   });
-  
-  
-  // let summary = '';
-  // let previousChunk = '';
-
-  // for await (const chunk of session.promptStreaming(content)) {
-  //   const newChunk = chunk.startsWith(previousChunk)
-  //     ? chunk.slice(previousChunk.length) : chunk;
-  //   console.log(newChunk);
-  //   summary += newChunk;
-  //   previousChunk = chunk;
-    
-  //   document.getElementById('summary-content').innerHTML = `
-  //     <p>${summary}</p>
-  //   `;     
-  // }
-  // console.log(summary);
 
   console.log("Overall summary received:", Date.now() - start, summary);
-  
-  
-  // const summarizer = await ai.summarizer.create({
-  //   format: 'plain-text',
-  //   type: 'tl;dr',
-  //   monitor(m) {
-  //     m.addEventListener('downloadprogress', (e) => {
-  //       console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
-  //     });
-  //   }
-  // });
-
-  // const summary = await summarizer.summarize(content, {
-  //   context: 'A collection of webpages visited recently.',
-  // });
 
   if (!controller.signal.aborted) {
     document.getElementById('summary-content').innerHTML = `
