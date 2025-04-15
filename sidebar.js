@@ -268,7 +268,6 @@ async function handleSummarize() {
   const clipsToSummarize = clips.slice(0, 5)
     // dedupe by URL to avoid duplicate content
     .filter(clip => {
-      console.log("Hi", clip.metadata.url);
       if (!webpages.has(clip.metadata.url)) {
         webpages.add(clip.metadata.url);
         return true;
@@ -303,7 +302,7 @@ async function handleSummarize() {
   
   console.log("Summarizing webpages...");
   loadingStatus.innerText = "Summarizing webpages...";
-  
+
   const summaries = [];
   
   // have to do this one at a time because session.prompt() won't parallelize
@@ -317,7 +316,7 @@ async function handleSummarize() {
     }));
     
   }
-
+  
   if (controller.signal.aborted) {
     console.log("Summarization aborted");
     return;
@@ -328,7 +327,7 @@ async function handleSummarize() {
   console.log("Generating overall summary...");
   loadingStatus.innerHTML = "Generating overall summary...";
   
-  const content = summaries.join('\n\n');
+  const content = summaries.filter(Boolean).join('\n\n');
   const summary = await session.prompt(`Summarize these paragraphs into a single paragraph of no more than five sentences:\n\n${content}`, {
     signal: controller.signal
   });
