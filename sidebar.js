@@ -435,8 +435,8 @@ async function handleSummarize() {
     
     console.log('Using summarizer', summarizer);
   } catch (error) {
-    loadingStatus.innerText = 'Summarizer not available';
-    console.error('No summarizer available', error);
+    summaryContent.innerHTML = '<p>Summarizer not available</p>';
+    console.error('Could not create summarizer', error);
     return;
   }
 
