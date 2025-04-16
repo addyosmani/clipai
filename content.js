@@ -234,7 +234,7 @@ function handleClipClick(event) {
   const elementText = elementContent.text;
   
   updateOverlayText(CLIP_HELPER_TEXT_CLIPPED);
-  console.log(metadata.content);
+  
   chrome.runtime.sendMessage({
     action: 'saveClip',
     data: {
@@ -376,13 +376,18 @@ function exitClippingMode() {
 }
 
 // Listen for messages from the sidebar
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'toggleClipMode') {
     if (message.enabled) {
       enterClippingMode();
     } else {
       exitClippingMode();
     }
+    return;
+  }
+  
+  if (message.action === 'getMetadata') {
+    sendResponse({ metadata: new PageMetaData() });
   }
 });
 

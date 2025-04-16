@@ -267,7 +267,7 @@ async function handleBookmarkPage() {
         };
       }
     } catch (error) {
-      console.log('Metadata extraction failed, using basic tab info:', error);
+      console.warn('Metadata extraction failed, using basic tab info:', error);
     }
 
     const clip = {
@@ -444,7 +444,7 @@ async function handleSummarize() {
     summaries.push(await summarizer.summarize(pageSummary.metadata.content, {
       signal: controller.signal
     }).catch(err => {
-      console.warn('Error summarizing webpage:', err, 'Skipping.');
+      console.warn(`Skipping summarization of ${pageSummary.metadata.url} due to error:`, err);
       return undefined;
     }));
     
