@@ -2,7 +2,7 @@
  * @fileoverview The script that runs the sidebar for ClipAI.
  */
 
-import { getSummarizer } from './summarizers.js';
+import { createSummarizer } from './summarizers.js';
 
 // #region Global Variables
 
@@ -420,22 +420,25 @@ async function handleSummarize() {
   }, { once: true });
   const loadingStatus = document.getElementById('loading-status');
   
-  const SummarizerType = getSummarizer();
-  if (!SummarizerType) {
+  // create the summarizer instance
+  let summarizer;
+  
+  try {
+    console.log('Creating summarizer...');
+    summarizer = await createSummarizer({
+      onProgress: (e) => {
+        const percentage = Math.round((e.loaded / e.total) * 100);
+        loadingStatus.innerText = `Downloading model (${percentage}%)`;
+      },
+      signal
+    });
+    
+    console.log('Using summarizer', summarizer);
+  } catch (error) {
     loadingStatus.innerText = 'Summarizer not available';
-    console.error('No summarizer available');
+    console.error('No summarizer available', error);
     return;
   }
-  console.log('Using summarizer:', SummarizerType.name);
-  
-  // create the summarizer instance
-  const summarizer = await SummarizerType.create({
-    onProgress: (e) => {
-      const percentage = Math.round((e.loaded / e.total) * 100);
-      loadingStatus.innerText = `Downloading model (${percentage}%)`;
-    },
-    signal
-  });
 
   const start = Date.now();
   

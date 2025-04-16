@@ -211,9 +211,24 @@ const summarizers = [
 ];
 
 /**
- * Gets the first available summarizer.
- * @returns {PromptApiSummarizer|NativeSummarizer|null} The first available summarizer or null if none are available.
+ * Creates a summarizer instance based on availability.
+ * @param {SummarizerOptions} options - Options for creating the summarizer.
+ * @returns {Promise<PromptApiSummarizer|NativeSummarizer>} A promise that resolves to an instance of a summarizer.
+ * @throws {Error} If no summarizer is available.
  */
-export function getSummarizer() {
-  return summarizers.find(s => s.isAvailable);
+export async function createSummarizer({ onProgress = () => { }, signal } = {}) {
+  
+  for (const summarizerClass of summarizers) {
+    if (summarizerClass.isAvailable) {
+      try {
+        // must be return await to catch the error in this function
+        return await summarizerClass.create({ onProgress, signal });
+      } catch (error) {
+        console.warn(`Failed to create summarizer: ${summarizerClass.name}`, error);
+      }
+    }
+  }
+  
+  // If no summarizer is available, throw an error 
+  throw new Error('No summarizer available.');
 }
