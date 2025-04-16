@@ -12,23 +12,13 @@ let sortOrder = 'new';
 let isClippingMode = false;
 
 const SUMMARIZE_LOADING = `
-<div class='summarize-loading'>
-  <svg class='loading-spinner' width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-    <path d='M12 2L15 12L12 22L9 12L12 2Z' fill='currentColor' />
-    <path d='M2 12L12 15L22 12L12 9L2 12Z' fill='currentColor' />
+<div class="summarize-loading">
+  <svg class="loading-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L15 12L12 22L9 12L12 2Z" fill="currentColor" />
+    <path d="M2 12L12 15L22 12L12 9L2 12Z" fill="currentColor" />
   </svg>
-  <p id='loading-status'>Summarizing...</p>
+  <p id="loading-status">Summarizing...</p>
 </div>
-`;
-
-const SYSTEM_PROMPT = `
-You are a summarizer that creates clear, concise, short summaries of articles.
-
-You will be given content from a webpage content. Produce a one-paragraph summary.
-The maximum length of the paragraph is 5 sentences and must be
-written in the third person.
-
-Produce output in plain text.
 `;
 
 // #endregion
@@ -97,27 +87,27 @@ function createClipCard(clip, index) {
   let previewHtml = '';
   
   if (preview) {
-    previewHtml = `<img src='${preview}' class='clip-preview' alt='Preview'>`;
+    previewHtml = `<img src="${preview}" class="clip-preview" alt="Preview">`;
   } else if (clip.content.text) {
-    previewHtml = `<div class='clip-preview'>
-      <p style='padding: 1rem; margin: 0;'>${clip.content.text.substring(0, 150)}...</p>
+    previewHtml = `<div class="clip-preview">
+      <p style="padding: 1rem; margin: 0;">${clip.content.text.substring(0, 150)}...</p>
     </div>`;
   }
 
   card.innerHTML = `
     ${previewHtml}
-    <div class='clip-content'>
-      <div class='clip-title'>${clip.metadata.title}</div>
-      <div class='clip-keywords'>
-        ${clip.metadata.keywords.map(k => `<span class='keyword'>${k}</span>`).join('')}
+    <div class="clip-content">
+      <div class="clip-title">${clip.metadata.title}</div>
+      <div class="clip-keywords">
+        ${clip.metadata.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
       </div>
-      <div class='clip-toolbar'>
-        <div class='clip-date'>${new Date(clip.timestamp).toLocaleDateString()}</div>
-        <button class='delete-clip' title='Delete clip' data-clip-id='${index}'>
-          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
-            <path d='M3 6h18'></path>
-            <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'></path>
-            <path d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'></path>
+      <div class="clip-toolbar">
+        <div class="clip-date">${new Date(clip.timestamp).toLocaleDateString()}</div>
+        <button class="delete-clip" title="Delete clip" data-clip-id="${index}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
         </button>
       </div>
@@ -179,16 +169,16 @@ async function toggleClipMode() {
     if (isClippingMode) {
       clipButton.classList.add('active');
       clipButton.innerHTML = `
-        <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
-          <path d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4'/>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
         </svg>
         Select Element
       `;
     } else {
       clipButton.classList.remove('active');
       clipButton.innerHTML = `
-        <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
-          <path d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4'/>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
         </svg>
         Clip Content
       `;
@@ -217,8 +207,8 @@ function exitClipMode() {
   const clipButton = document.getElementById('clip-content');
   clipButton.classList.remove('active');
   clipButton.innerHTML = `
-    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
-      <path d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4'/>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
     </svg>
     Clip Content
   `;
@@ -290,8 +280,8 @@ async function handleBookmarkPage() {
     const button = document.getElementById('bookmark-page');
     const originalText = button.innerHTML;
     button.innerHTML = `
-      <svg width='16' height='16' viewBox='0 0 24 24' fill='currentColor' stroke='currentColor' stroke-width='2'>
-        <path d='m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z'/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
       </svg>
       Bookmarked!
     `;
@@ -500,12 +490,15 @@ document.addEventListener('keydown', handleEscapeKey, {
 });
 
 // Listen for messages
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'clipAdded') {
     loadClips();
   } else if (message.action === 'clipModeExited') {
     exitClipMode();
   }
+  
+  // Return false as we're handling messages synchronously
+  return false;
 });
 
 // #endregion

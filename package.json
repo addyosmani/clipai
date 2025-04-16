@@ -12,7 +12,6 @@
     "watch": "nodemon --watch . --ext js,css,html --ignore ./dist --exec \"npm run build\""
   },
   "dependencies": {
-    "@mozilla/readability": "^0.6.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

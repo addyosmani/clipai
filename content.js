@@ -166,7 +166,7 @@ function createOverlay() {
   overlay = document.createElement('div');
   overlay.className = 'clipai-overlay';
   overlay.innerHTML = `
-    <div class='clipai-helper-text'>
+    <div class="clipai-helper-text">
       <p>${CLIP_HELPER_TEXT}</p>
     </div>
   `;
@@ -383,11 +383,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else {
       exitClippingMode();
     }
-    return;
+    // No response needed for this action
+    return false;
   }
   
   if (message.action === 'getMetadata') {
+    console.log('getMetadata');
     sendResponse({ metadata: new PageMetaData() });
+    return false; // We've responded synchronously
   }
 });
 

@@ -10,33 +10,6 @@ const MAX_SYNC_BYTES = 102400; // 100KB limit for sync storage
 
 // #endregion
 
-// download the model
-// const session = await chrome.aiOriginTrial.languageModel.create({
-//   monitor(m) {
-//     m.addEventListener('downloadprogress', (e) => {
-//       console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
-//     });
-//   },
-// });
-
-// const summarizer = await ai.summarizer.create({
-//   format: 'plain-text',
-//   type: 'tl;dr',
-//   monitor(m) {
-//     m.addEventListener('downloadprogress', (e) => {
-//       console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
-//     });
-//   }
-// });
-
-// await summarizer.ready;
-
-// const longText = document.querySelector('article').innerHTML;
-// const summary = await summarizer.summarize(longText, {
-//   context: 'This article is intended for a tech-savvy audience.',
-// });
-
-
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId });
 });
