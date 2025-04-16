@@ -13,7 +13,7 @@ const MAX_SYNC_BYTES = 102400; // 100KB limit for sync storage
 // download the model
 // const session = await chrome.aiOriginTrial.languageModel.create({
 //   monitor(m) {
-//     m.addEventListener("downloadprogress", (e) => {
+//     m.addEventListener('downloadprogress', (e) => {
 //       console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
 //     });
 //   },
@@ -70,31 +70,17 @@ async function getClips() {
   }
 }
 
+// Listen for messages from the content script or sidebar
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'saveClip') {
-    getClips().then(clips => {
+    // Add new clip to storage
+    chrome.storage.local.get('clipai_clips', (data) => {
+      const clips = data.clipai_clips || [];
       clips.unshift(message.data);
-      return saveToStorage(clips);
-    }).then(() => {
-      // Notify sidebar to update
-      chrome.runtime.sendMessage({ action: 'clipAdded' });
-    });
-    return true; // Keep message channel open
-  } else if (message.action === 'getMetadata') {
-    // Forward metadata requests to content script
-    chrome.tabs.query({ active: true, currentWindow: true })
-      .then(([tab]) => {
-        if (tab) {
-          return chrome.tabs.sendMessage(tab.id, message);
-        }
-      })
-      .then(response => {
-        sendResponse(response);
-      })
-      .catch(error => {
-        console.error('Metadata error:', error);
-        sendResponse({ success: false, error: error.message });
+      chrome.storage.local.set({ clipai_clips: clips }, () => {
+        // Notify sidebar that clips have been updated
+        chrome.runtime.sendMessage({ action: 'clipAdded' });
       });
-    return true; // Keep message channel open
+    });
   }
 });

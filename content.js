@@ -23,8 +23,8 @@ let currentElement = null;
  */
 let overlay = null;
 
-const CLIP_HELPER_TEXT = "Click on any element to clip it.";
-const CLIP_HELPER_TEXT_CLIPPED = "Clipped!";
+const CLIP_HELPER_TEXT = 'Click on any element to clip it.';
+const CLIP_HELPER_TEXT_CLIPPED = 'Clipped!';
 
 // #endregion
 
@@ -166,7 +166,7 @@ function createOverlay() {
   overlay = document.createElement('div');
   overlay.className = 'clipai-overlay';
   overlay.innerHTML = `
-    <div class="clipai-helper-text">
+    <div class='clipai-helper-text'>
       <p>${CLIP_HELPER_TEXT}</p>
     </div>
   `;
@@ -185,6 +185,23 @@ function updateOverlayText(text) {
   if (helperText) {
     helperText.innerText = text;
   }
+}
+
+/**
+ * Removes the highlight from the current element.
+ * @returns {void}
+ */
+function removeHighlight() {
+  if (currentElement) {
+    currentElement.classList.remove('clipai-highlight');
+    currentElement = null;
+  }
+  
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  
+  document.body.style.cursor = '';
 }
 
 // #endregion
@@ -284,6 +301,15 @@ function handleMouseOut(event) {
     currentElement = null;
   }
 }
+
+// Add escape key handler to exit clip mode
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isClippingMode) {
+    isClippingMode = false;
+    removeHighlight();
+    chrome.runtime.sendMessage({ action: 'clipModeExited' });
+  }
+});
 
 // #endregion
 
