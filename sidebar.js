@@ -381,6 +381,12 @@ function toggleClipMode() {
  */
 async function handleSummarize() {
   
+  const app = document.getElementById('app');
+  if (app.classList.contains('summarizing')) {
+    console.warn('Already summarizing, ignoring request');
+    return;
+  }
+  
   // get the page content for the first five clips
   const webpages = new Set();
   const clipsToSummarize = clips.slice(0, 5)
