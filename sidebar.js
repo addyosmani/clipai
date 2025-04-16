@@ -382,6 +382,8 @@ function toggleClipMode() {
 async function handleSummarize() {
   
   const app = document.getElementById('app');
+  const summaryContent = document.getElementById('summary-content');
+  
   if (app.classList.contains('summarizing')) {
     console.warn('Already summarizing, ignoring request');
     return;
@@ -399,14 +401,22 @@ async function handleSummarize() {
 
       return false;
     });
+    
+  if (clipsToSummarize.length === 0) {
+    console.warn('No clips to summarize');
+    summaryContent.innerHTML = '<p>No clips to summarize</p>';
+    return;
+  }
+    
   const controller = new AbortController();
+  const signal = controller.signal;
   
   // setup summarize UI
-  document.getElementById('summary-content').innerHTML = SUMMARIZE_LOADING;
-  document.getElementById('app').classList.add('summarizing');
+  summaryContent.innerHTML = SUMMARIZE_LOADING;
+  app.classList.add('summarizing');
   document.getElementById('close-summary').addEventListener('click', () => {
-    document.getElementById('app').classList.remove('summarizing');
-    controller.abort();
+    app.classList.remove('summarizing');
+    controller.abort("Summarization canceled by user.");
   }, { once: true });
   const loadingStatus = document.getElementById('loading-status');
   
@@ -424,7 +434,7 @@ async function handleSummarize() {
       const percentage = Math.round((e.loaded / e.total) * 100);
       loadingStatus.innerText = `Downloading model (${percentage}%)`;
     },
-    signal: controller.signal
+    signal
   });
 
   const start = Date.now();
@@ -438,7 +448,7 @@ async function handleSummarize() {
   for (const pageSummary of clipsToSummarize) {
     
     summaries.push(await summarizer.summarize(pageSummary.metadata.content, {
-      signal: controller.signal
+      signal
     }).catch(err => {
       console.warn(`Skipping summarization of ${pageSummary.metadata.url} due to error:`, err);
       return undefined;
@@ -446,27 +456,24 @@ async function handleSummarize() {
     
   }
   
-  if (controller.signal.aborted) {
+  if (signal.aborted) {
     console.log('Summarization aborted');
     return;
   }
 
-  
   console.log('Summaries received:', Date.now() - start, summaries);
   console.log('Generating overall summary...');
   loadingStatus.innerHTML = 'Generating overall summary...';
   
   const content = summaries.filter(Boolean).join('\n\n');
   const summary = await summarizer.summarize(content, {
-    signal: controller.signal
+    signal
   });
 
   console.log('Overall summary received:', Date.now() - start, summary);
   
-  if (!controller.signal.aborted) {
-    document.getElementById('summary-content').innerHTML = `
-      <p>${summary}</p>
-    `;
+  if (!signal.aborted) {
+    summaryContent.innerHTML = `<p>${summary}</p>`;
   }
   
 }
