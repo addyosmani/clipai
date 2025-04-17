@@ -6,9 +6,8 @@
 const SYSTEM_PROMPT = `
 You are a summarizer that creates clear, concise, short summaries of articles.
 
-You will be given content from a webpage content. Produce a one-paragraph summary.
-The maximum length of the paragraph is 5 sentences and must be
-written in the third person.
+You will be given content from a webpage content. Produce a summary written
+in the third person, focusing on the main points and key details.
 
 Produce output in plain text.
 `;
@@ -77,7 +76,7 @@ function getPromptApiPrompt(length, input) {
     case 'short':
       return `Summarize this article into a single sentence:\n\n${input}`;
     case 'medium':
-      return `Summarize this article into a single paragraph of no more than five sentences and no more than 3000 characters:\n\n${input}`;
+      return `Summarize this article into a single paragraph of no more than five sentences and no more than 300 characters:\n\n${input}`;
     case 'long':
       return `Summarize this article into a detailed summary:\n\n${input}`;
     default:
