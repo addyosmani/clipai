@@ -23,8 +23,8 @@ let currentElement = null;
  */
 let overlay = null;
 
-const CLIP_HELPER_TEXT = "Click on any element to clip it.";
-const CLIP_HELPER_TEXT_CLIPPED = "Clipped!";
+const CLIP_HELPER_TEXT = 'Click on any element to clip it.';
+const CLIP_HELPER_TEXT_CLIPPED = 'Clipped!';
 
 // #endregion
 
@@ -38,6 +38,7 @@ class PageMetaData {
   url = window.location.href;
   keywords = [];
   image = '';
+  content = '';
   
   /**
    * Creates an instance of PageMetaData.
@@ -67,6 +68,7 @@ class PageMetaData {
         .filter((word, i, arr) => arr.indexOf(word) === i)
         .slice(0, 3);
       this.keywords = contentWords;
+      this.content = getMainContent();
     }
 
   }
@@ -110,6 +112,52 @@ class ElementContent {
 // #region Helper Functions
 
 /**
+ * Gets the main content of the page.
+ * @returns {string} The main content of the page.
+ */
+function getMainContent() {
+  // Elements likely to contain main content
+  const contentElements = document.querySelectorAll('main, [role="main"], article, .main, #main, .content, #content, .post, .article');
+
+  // If no designated content areas, look at all major blocks
+  const blocks = contentElements.length > 0 ?
+    contentElements :
+    document.querySelectorAll('div, section');
+
+  let bestBlock = null;
+  let maxScore = 0;
+
+  blocks.forEach(block => {
+    // Skip unwanted elements
+    if (block.matches('a[href], nav, header, footer, .nav, .header, .footer, [role="navigation"], [role="banner"], [role="contentinfo"], pre, code, .ad, .advertisement, .pagination, img, table, ol, ul, figure')) {
+      return;
+    }
+
+    // Calculate text density score
+    const text = block.textContent;
+    const links = block.getElementsByTagName('a');
+    const linkDensity = links.length === 0 ? 0 : links.length / text.length;
+
+    // Score based on text length and link density
+    const score = text.length * (1 - linkDensity);
+
+    if (score > maxScore) {
+      maxScore = score;
+      bestBlock = block;
+    }
+  });
+  
+  const mainContent = bestBlock ? bestBlock : document.body;
+  const mainContentClone = mainContent.cloneNode(true);
+  
+  // Remove unwanted content
+  mainContentClone.querySelectorAll('script, style, pre, picture, aside').forEach(el => el.remove());
+
+  // collapse whitespace
+  return mainContentClone.textContent.replace(/\s+/g, ' ').trim();
+}
+
+/**
  * Creates the semitransparent overlay for the entire page and appends
  * it to the body. This includes the helper text.
  * @returns {void}
@@ -137,6 +185,23 @@ function updateOverlayText(text) {
   if (helperText) {
     helperText.innerText = text;
   }
+}
+
+/**
+ * Removes the highlight from the current element.
+ * @returns {void}
+ */
+function removeHighlight() {
+  if (currentElement) {
+    currentElement.classList.remove('clipai-highlight');
+    currentElement = null;
+  }
+  
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  
+  document.body.style.cursor = '';
 }
 
 // #endregion
@@ -237,6 +302,15 @@ function handleMouseOut(event) {
   }
 }
 
+// Add escape key handler to exit clip mode
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isClippingMode) {
+    isClippingMode = false;
+    removeHighlight();
+    chrome.runtime.sendMessage({ action: 'clipModeExited' });
+  }
+});
+
 // #endregion
 
 // #region Clipping Mode Toggles
@@ -302,13 +376,21 @@ function exitClippingMode() {
 }
 
 // Listen for messages from the sidebar
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'toggleClipMode') {
     if (message.enabled) {
       enterClippingMode();
     } else {
       exitClippingMode();
     }
+    // No response needed for this action
+    return false;
+  }
+  
+  if (message.action === 'getMetadata') {
+    console.log('getMetadata');
+    sendResponse({ metadata: new PageMetaData() });
+    return false; // We've responded synchronously
   }
 });
 

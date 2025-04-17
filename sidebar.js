@@ -2,6 +2,8 @@
  * @fileoverview The script that runs the sidebar for ClipAI.
  */
 
+import { createSummarizer } from './summarizers.js';
+
 // #region Global Variables
 
 let clips = [];
@@ -9,7 +11,19 @@ let searchTerm = '';
 let sortOrder = 'new';
 let isClippingMode = false;
 
+const SUMMARIZE_LOADING = `
+<div class="summarize-loading">
+  <svg class="loading-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L15 12L12 22L9 12L12 2Z" fill="currentColor" />
+    <path d="M2 12L12 15L22 12L12 9L2 12Z" fill="currentColor" />
+  </svg>
+  <p id="loading-status">Summarizing...</p>
+</div>
+`;
+
 // #endregion
+
+// #region Clip Management
 
 /**
  * Load clips from storage and render them.
@@ -54,6 +68,10 @@ function deleteClip(clipId) {
   chrome.storage.local.set({ clipai_clips: clips });
   renderClips();
 }
+
+// #endregion
+
+// #region Clip Rendering
 
 /**
  * Create a card element for a clip
@@ -134,15 +152,92 @@ function renderClips() {
   });
 }
 
+// #endregion
+
+
+// #region Clip Mode Management
+
+/**
+ * Sends a message to the content script to toggle clipping mode.
+ * @returns {void}
+ */
+async function sendClipModeChangeMessage() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'toggleClipMode',
+        enabled: isClippingMode
+      });
+    }
+  } catch (error) {
+    console.error('Error sending clip mode change message:', error);
+  }
+}
+
+/**
+ * Enters the clipping mode by updating the UI.
+ * @returns {void}
+ */
+async function enterClipMode() {
+  const clipButton = document.getElementById('clip-content');
+  isClippingMode = true;
+
+  clipButton.classList.add('active');
+  clipButton.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+    </svg>
+    Exit Clip Mode
+  `;
+}
+
+/**
+ * Exits the clipping mode by updating the UI.
+ * @returns {void}
+ */
+function exitClipMode() {
+  const clipButton = document.getElementById('clip-content');
+  isClippingMode = false;
+
+  clipButton.classList.remove('active');
+  clipButton.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+    </svg>
+    Clip Content
+  `;
+}
+
+/**
+ * Toggles the clipping mode in the main content.
+ * @returns {void}
+ */
+function toggleClipMode() {
+  isClippingMode = !isClippingMode;
+
+  if (isClippingMode) {
+    enterClipMode();
+  } else {
+    exitClipMode();
+  }
+
+  return sendClipModeChangeMessage();
+}
+
+// #endregion
+
+// #region Event Handlers
+
 /**
  * Bookmarks the entire page.
- * @returns {void}
+ * @returns {Promise<void>}
  */
 async function handleBookmarkPage() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error('No active tab found');
-    
+
     // Create basic metadata from tab info first
     let metadata = {
       title: tab.title || '',
@@ -163,7 +258,7 @@ async function handleBookmarkPage() {
         };
       }
     } catch (error) {
-      console.log('Metadata extraction failed, using basic tab info:', error);
+      console.warn('Metadata extraction failed, using basic tab info:', error);
     }
 
     const clip = {
@@ -191,7 +286,7 @@ async function handleBookmarkPage() {
       </svg>
       Bookmarked!
     `;
-    
+
     setTimeout(() => {
       button.innerHTML = originalText;
     }, 1500);
@@ -213,74 +308,115 @@ function handleEscapeKey(event) {
 }
 
 /**
- * Enters the clipping mode by updating the UI.
- * @returns {void}
+ * Handles summarizing the first five clips.
+ * @returns {Promise<void>}
  */
-async function enterClipMode() {
-  const clipButton = document.getElementById('clip-content');
-  isClippingMode = true;
+async function handleSummarize() {
   
-  clipButton.classList.add('active');
-  clipButton.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-    </svg>
-    Exit Clip Mode
-  `;
-}
-
-/**
- * Exits the clipping mode by updating the UI.
- * @returns {void}
- */
-function exitClipMode() {
-  const clipButton = document.getElementById('clip-content');
-  isClippingMode = false;
+  const app = document.getElementById('app');
+  const summaryContent = document.getElementById('summary-content');
   
-  clipButton.classList.remove('active');
-  clipButton.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-    </svg>
-    Clip Content
-  `;
-}
-
-/**
- * Sends a message to the content script to toggle clipping mode.
- * @returns {void}
- */
-async function sendClipModeChangeMessage() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab) {
-      chrome.tabs.sendMessage(tab.id, { 
-        action: 'toggleClipMode',
-        enabled: isClippingMode
-      });
-    }
-  } catch (error) {
-    console.error('Error sending clip mode change message:', error);
+  if (app.classList.contains('summarizing')) {
+    console.warn('Already summarizing, ignoring request');
+    return;
   }
-}
+  
+  // get the page content for the first five clips
+  const webpages = new Set();
+  const clipsToSummarize = clips.slice(0, 5)
+    // dedupe by URL to avoid duplicate content
+    .filter(clip => {
+      if (!webpages.has(clip.metadata.url)) {
+        webpages.add(clip.metadata.url);
+        return true;
+      }
 
-/**
- * Toggles the clipping mode in the main content.
- * @returns {void}
- */
-function toggleClipMode() {
-    isClippingMode = !isClippingMode;
+      return false;
+    });
     
-    if (isClippingMode) {
-      enterClipMode();
-    } else {
-      exitClipMode();
-    }
+  if (clipsToSummarize.length === 0) {
+    console.warn('No clips to summarize');
+    summaryContent.innerHTML = '<p>No clips to summarize</p>';
+    return;
+  }
+    
+  const controller = new AbortController();
+  const signal = controller.signal;
+  
+  // setup summarize UI
+  summaryContent.innerHTML = SUMMARIZE_LOADING;
+  app.classList.add('summarizing');
+  document.getElementById('close-summary').addEventListener('click', () => {
+    app.classList.remove('summarizing');
+    controller.abort("Summarization canceled by user.");
+  }, { once: true });
+  const loadingStatus = document.getElementById('loading-status');
+  
+  // create the summarizer instance
+  let summarizer;
+  
+  try {
+    console.log('Creating summarizer...');
+    summarizer = await createSummarizer({
+      onProgress: (e) => {
+        const percentage = Math.round((e.loaded / e.total) * 100);
+        loadingStatus.innerText = `Downloading model (${percentage}%)`;
+      },
+      signal
+    });
+    
+    console.log('Using summarizer', summarizer);
+  } catch (error) {
+    summaryContent.innerHTML = '<p>Summarizer not available</p>';
+    console.error('Could not create summarizer', error);
+    return;
+  }
 
-    return sendClipModeChangeMessage();
+  const start = Date.now();
+  
+  console.log('Summarizing webpages...');
+  loadingStatus.innerText = 'Summarizing webpages...';
+
+  const summaries = [];
+  
+  // have to do this one at a time because session.prompt() won't parallelize
+  for (const pageSummary of clipsToSummarize) {
+    
+    summaries.push(await summarizer.summarize(pageSummary.metadata.content, {
+      signal
+    }).catch(err => {
+      console.warn(`Skipping summarization of ${pageSummary.metadata.url} due to error:`, err);
+      return undefined;
+    }));
+    
+  }
+  
+  if (signal.aborted) {
+    console.log('Summarization aborted');
+    return;
+  }
+
+  console.log('Summaries received:', Date.now() - start, summaries);
+  console.log('Generating overall summary...');
+  loadingStatus.innerHTML = 'Generating overall summary...';
+  
+  const content = summaries.filter(Boolean).join('\n\n');
+  const summary = await summarizer.summarize(content, {
+    signal
+  });
+
+  console.log('Overall summary received:', Date.now() - start, summary);
+  
+  if (!signal.aborted) {
+    summaryContent.innerHTML = `<p>${summary}</p>`;
+  }
+  
 }
 
-// Event Listeners
+// #endregion
+
+// #region Event Handler Assignment
+
 document.getElementById('search').addEventListener('input', (e) => {
   searchTerm = e.target.value;
   renderClips();
@@ -293,6 +429,9 @@ document.getElementById('sort').addEventListener('change', (e) => {
 
 document.getElementById('bookmark-page').addEventListener('click', handleBookmarkPage);
 document.getElementById('clip-content').addEventListener('click', toggleClipMode);
+document.getElementById('summarize').addEventListener('click', () => {
+  handleSummarize();
+});
 
 document.addEventListener('keydown', handleEscapeKey, {
   capture: true,
@@ -306,6 +445,8 @@ chrome.runtime.onMessage.addListener((message) => {
     exitClipMode();
   }
 });
+
+// #endregion
 
 // Initial load
 loadClips();

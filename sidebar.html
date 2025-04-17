@@ -21,6 +21,25 @@
         </svg>
         Clip Content
       </button>
+      <button id="summarize" class="bookmark-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L15 12L12 22L9 12L12 2Z" fill="currentColor" />
+          <path d="M2 12L12 15L22 12L12 9L2 12Z" fill="currentColor" />
+        </svg>
+        Summarize
+      </button>
+      <div class="summary-container">
+        <header>
+          <h2>Summary</h2>
+          <button id="close-summary" class="close-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+        <div id="summary-content"></div>
+      </div>
       <div class="search-container">
         <input type="text" id="search" placeholder="Search clips...">
       </div>

@@ -147,3 +147,65 @@ body {
   font-weight: 500;
   transition: color 0.2s;
 }
+
+.summarizing .search-container,
+.summarizing .sort-container {
+  display: none;
+}
+
+.summary-container {
+  display: none;
+  background: rgb(225, 225, 225);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+}
+
+.summary-container header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-container h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  
+}
+
+.summary-container button {
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.summarizing .summary-container {
+  display: block;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.summarize-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+
+  .loading-spinner {
+    color: #3b82f6;
+    animation: spin 1s linear infinite;
+  }
+}
