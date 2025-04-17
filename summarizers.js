@@ -2,6 +2,13 @@
  * @fileoverview This file contains different summarizer implementations.
  */
 
+// Import the pipeline function from transformers.js
+import { pipeline } from '@huggingface/transformers';
+
+/**
+ * @import { Pipeline } from '@huggingface/transformers'
+ */
+
 // #region Constants
 const SYSTEM_PROMPT = `
 You are a summarizer that creates clear, concise, short summaries of articles.
@@ -58,7 +65,7 @@ function assertValidInput(input) {
 
 // #endregion
 
-// region PromptApiSummarizer
+// #region PromptApiSummarizer
 
 /**
  * Class representing a summarizer using the Prompt API.
@@ -222,19 +229,118 @@ export class NativeSummarizer {
 
 // #endregion
 
+// #region T5Summarizer
+
+/**
+ * Class representing a summarizer using the T5 model via Transformers.js.
+ */
+export class T5Summarizer {
+
+  /**
+   * @type {Pipeline}
+   */
+  #summarize;
+
+  /**
+   * Creates an instance of T5Summarizer.
+   * @param {Pipeline} summarizationPipeline - The summarization pipeline function.
+   */
+  constructor(summarizationPipeline) {
+    this.#summarize = summarizationPipeline;
+  }
+
+  /**
+   * Checks if the T5Summarizer is available by checking if the pipeline function is defined.
+   * @returns {boolean} True if the pipeline function is defined, false otherwise.
+   */
+  static get isAvailable() {
+    return typeof pipeline === 'function';
+  }
+
+  /**
+   * Creates a new instance of T5Summarizer.
+   * @param {SummarizerOptions} options - Options for creating the summarizer.
+   * @returns {Promise<T5Summarizer>} A promise that resolves to a new instance of T5Summarizer.
+   * @throws {Error} If the pipeline function is not available.
+   */
+  static async create({ onProgress = () => { } } = {}) {
+    if (!T5Summarizer.isAvailable) {
+      throw new Error('Transformers.js pipeline is not available.');
+    }
+
+    const modelId = 'Xenova/t5-small';
+    console.log(`Initializing T5 summarizer with model ID: ${modelId}`);
+    // downloads the model
+    const response = await chrome.runtime.sendMessage({ action: 't5:init', modelId });
+console.log(`T5 model initialization response:`, response);
+    if (response.error) {
+      throw new Error(`Failed to initialize T5 model: ${response.error}`);
+    }
+    
+    // // Create the summarization pipeline
+    // const summarizationPipeline = await pipeline(
+    //   'summarization',
+    //   modelId,
+    //   {
+    //     // only the "progress" event has the loaded and total properties
+    //     progress_callback(event) {
+    //       if (event.status === 'progress') {
+    //         onProgress(event);
+    //       }
+    //     },
+    //   }
+    // );
+
+    return new T5Summarizer(null);
+
+  }
+
+  /**
+   * Summarizes the given input using the T5 model.
+   * @param {string} input - The input string to summarize.
+   * @param {SummarizeOptions & {length?: 'short'|'medium'|'long'}} [options] - Options for summarization.
+   * @returns {Promise<string>} A promise that resolves to the summary of the input.
+   * @throws {Error} If the input is invalid or if the pipeline is not initialized.
+   */
+  async summarize(input, { signal, length = 'medium' } = {}) {
+    
+    assertValidInput(input);
+    
+    // Check if the operation was cancelled
+    signal?.throwIfAborted();
+    
+    const response = await chrome.runtime.sendMessage({
+      action: 't5:summarize',
+      data: {
+        input,
+        length
+      }
+    });
+
+    if (response.error) {
+      throw new Error(`Failed to summarize with T5 model: ${response.error}`);
+    }
+    
+    return response.summary;
+  }
+}
+
+// #endregion
+
 /**
  * Array of available summarizers ordered by preference.
  * The first available summarizer will be used.
  */
 const summarizers = [
-  PromptApiSummarizer,
-  NativeSummarizer
+  T5Summarizer,
+  // PromptApiSummarizer,
+  // NativeSummarizer,
 ];
 
 /**
  * Creates a summarizer instance based on availability.
  * @param {SummarizerOptions} options - Options for creating the summarizer.
- * @returns {Promise<PromptApiSummarizer|NativeSummarizer>} A promise that resolves to an instance of a summarizer.
+ * @returns {Promise<PromptApiSummarizer|NativeSummarizer|T5Summarizer>} A promise that resolves to an instance of a summarizer.
  * @throws {Error} If no summarizer is available.
  */
 export async function createSummarizer({ onProgress = () => { }, signal } = {}) {

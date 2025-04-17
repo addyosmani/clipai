@@ -12,6 +12,7 @@
     "watch": "nodemon --watch . --ext js,css,html --ignore ./dist --exec \"npm run build\""
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.5.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

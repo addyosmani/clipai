@@ -33,6 +33,9 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuVYku+SROuy6RL7YwwdPczYxf+fvPewmZbIucONO7xzGHFP7q7WMWgm/kJEOYLWdRkfbrJMXiAsb3bXupdD3u/SS9tBiDUuwnTCvhaYms37PfTVIsHlxmJagQusW+j60gZglzJZoKCJQQ7l3OEXQtELdOmWfhfx6hSaSeWCUzDOuJ7PyEuLiIjvrIXhKGgRz8XRPKmhovtIqAFpQi4krXTRuSp3VDHjkXCLJDxkNRtMXSmOougzEBzG1Psq7yAzJYuthzHdXYvsA59rLVlf94o++hoLXB4DiJZig7rGzzyVgNAdUoJJajiMNcWAKAvrQu0SOo6zZ+u9IZGLhtZywzQIDAQAB",
   "trial_tokens": [
     "AltLMUTvizKgHZWTx7+QznpB9oTrNKwN4KKJx63LBo891pJaq6tzZxJvCUYqdhWK3hrhrSz0dQS4FgSTmPsI+gYAAAB4eyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vbmJiZmFmYW9oYWJlaGNhbGVhbGppbmhqZG9nZWdiZGQiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElGb3JFeHRlbnNpb24iLCJleHBpcnkiOjE3NjA0ODYzOTl9",
