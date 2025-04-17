@@ -158,53 +158,48 @@ function renderClips() {
 // #region Clip Mode Management
 
 /**
- * Toggles the clipping mode in the main content.
+ * Sends a message to the content script to toggle clipping mode.
  * @returns {void}
  */
-async function toggleClipMode() {
+async function sendClipModeChangeMessage() {
   try {
-    const clipButton = document.getElementById('clip-content');
-    isClippingMode = !isClippingMode;
-    
-    if (isClippingMode) {
-      clipButton.classList.add('active');
-      clipButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-        </svg>
-        Select Element
-      `;
-    } else {
-      clipButton.classList.remove('active');
-      clipButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-        </svg>
-        Clip Content
-      `;
-    }
-
-    // Send message to content script
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab) {
-      chrome.tabs.sendMessage(tab.id, { 
+      chrome.tabs.sendMessage(tab.id, {
         action: 'toggleClipMode',
         enabled: isClippingMode
       });
     }
   } catch (error) {
-    console.error('Error toggling clip mode:', error);
+    console.error('Error sending clip mode change message:', error);
   }
 }
 
 /**
- * Disables clipping mode and resets the UI
+ * Enters the clipping mode by updating the UI.
+ * @returns {void}
+ */
+async function enterClipMode() {
+  const clipButton = document.getElementById('clip-content');
+  isClippingMode = true;
+
+  clipButton.classList.add('active');
+  clipButton.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
+    </svg>
+    Exit Clip Mode
+  `;
+}
+
+/**
+ * Exits the clipping mode by updating the UI.
+ * @returns {void}
  */
 function exitClipMode() {
-  if (!isClippingMode) return;
-  
-  isClippingMode = false;
   const clipButton = document.getElementById('clip-content');
+  isClippingMode = false;
+
   clipButton.classList.remove('active');
   clipButton.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -212,16 +207,22 @@ function exitClipMode() {
     </svg>
     Clip Content
   `;
+}
 
-  // Notify content script
-  chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-    if (tab) {
-      chrome.tabs.sendMessage(tab.id, { 
-        action: 'toggleClipMode',
-        enabled: false
-      });
-    }
-  });
+/**
+ * Toggles the clipping mode in the main content.
+ * @returns {void}
+ */
+function toggleClipMode() {
+  isClippingMode = !isClippingMode;
+
+  if (isClippingMode) {
+    enterClipMode();
+  } else {
+    exitClipMode();
+  }
+
+  return sendClipModeChangeMessage();
 }
 
 // #endregion
@@ -307,76 +308,7 @@ function handleEscapeKey(event) {
 }
 
 /**
- * Enters the clipping mode by updating the UI.
- * @returns {void}
- */
-async function enterClipMode() {
-  const clipButton = document.getElementById('clip-content');
-  isClippingMode = true;
-  
-  clipButton.classList.add('active');
-  clipButton.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-    </svg>
-    Exit Clip Mode
-  `;
-}
-
-/**
- * Exits the clipping mode by updating the UI.
- * @returns {void}
- */
-function exitClipMode() {
-  const clipButton = document.getElementById('clip-content');
-  isClippingMode = false;
-  
-  clipButton.classList.remove('active');
-  clipButton.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-2-2-1.5 0-2 .62-2 2s.5 2.5 2 2.5zm0 0L12 17m4-7-1.5-2.5m-1 0L12 5m-1.5 2.5L9 5m4.5 4.5L15 7.5M19 13v6m-2-3h4"/>
-    </svg>
-    Clip Content
-  `;
-}
-
-/**
- * Sends a message to the content script to toggle clipping mode.
- * @returns {void}
- */
-async function sendClipModeChangeMessage() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab) {
-      chrome.tabs.sendMessage(tab.id, { 
-        action: 'toggleClipMode',
-        enabled: isClippingMode
-      });
-    }
-  } catch (error) {
-    console.error('Error sending clip mode change message:', error);
-  }
-}
-
-/**
- * Toggles the clipping mode in the main content.
- * @returns {void}
- */
-function toggleClipMode() {
-    isClippingMode = !isClippingMode;
-    
-    if (isClippingMode) {
-      enterClipMode();
-    } else {
-      exitClipMode();
-    }
-
-    return sendClipModeChangeMessage();
-}
-
-// Event Listeners
-/**
- * Handles summarizing the first first clips.
+ * Handles summarizing the first five clips.
  * @returns {Promise<void>}
  */
 async function handleSummarize() {
@@ -506,15 +438,12 @@ document.addEventListener('keydown', handleEscapeKey, {
 });
 
 // Listen for messages
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message) => {
   if (message.action === 'clipAdded') {
     loadClips();
   } else if (message.action === 'clipModeExited') {
     exitClipMode();
   }
-  
-  // Return false as we're handling messages synchronously
-  return false;
 });
 
 // #endregion
