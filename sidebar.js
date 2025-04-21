@@ -382,7 +382,10 @@ async function handleSummarize() {
   console.log('Summary length:', summaryLength);
   
   // have to do this one at a time because session.prompt() won't parallelize
-  for (const pageSummary of clipsToSummarize) {
+  for (let i = 0, len = clipsToSummarize.length; i < len; i++) {
+    const pageSummary = clipsToSummarize[i];
+    console.log(`Summarizing ${pageSummary.metadata.url}...`);
+    loadingStatus.innerText = `Summarizing ${i+1} of ${len}...`;
     
     summaries.push(await summarizer.summarize(pageSummary.metadata.content, {
       signal,
@@ -391,7 +394,6 @@ async function handleSummarize() {
       console.warn(`Skipping summarization of ${pageSummary.metadata.url} due to error:`, err);
       return undefined;
     }));
-    
   }
   
   if (signal.aborted) {

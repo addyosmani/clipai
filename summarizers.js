@@ -76,7 +76,7 @@ function getPromptApiPrompt(length, input) {
     case 'short':
       return `Summarize this article into a single sentence:\n\n${input}`;
     case 'medium':
-      return `Summarize this article into a single paragraph of no more than five sentences and no more than 300 characters:\n\n${input}`;
+      return `Summarize this article into at most five sentences and at most 300 characters:\n\n${input}`;
     case 'long':
       return `Summarize this article into a detailed summary:\n\n${input}`;
     default:
@@ -129,6 +129,12 @@ export class PromptApiSummarizer {
       signal
     });
     await session.ready;
+    
+    // when the signal is aborted, destroy the session to free up resources
+    signal?.addEventListener('abort', () => {
+      session.destroy();
+    });
+    
     return new PromptApiSummarizer(session);
   }
 
@@ -208,6 +214,11 @@ export class NativeSummarizer {
       },
       signal
     });
+
+    // when the signal is aborted, destroy the session to free up resources
+    signal?.addEventListener('abort', () => {
+      summarizer.destroy();
+    });    
 
     return new NativeSummarizer(summarizer);
   }
