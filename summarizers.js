@@ -237,24 +237,11 @@ export class NativeSummarizer {
 export class T5Summarizer {
 
   /**
-   * @type {Pipeline}
-   */
-  #summarize;
-
-  /**
-   * Creates an instance of T5Summarizer.
-   * @param {Pipeline} summarizationPipeline - The summarization pipeline function.
-   */
-  constructor(summarizationPipeline) {
-    this.#summarize = summarizationPipeline;
-  }
-
-  /**
    * Checks if the T5Summarizer is available by checking if the pipeline function is defined.
-   * @returns {boolean} True if the pipeline function is defined, false otherwise.
+   * @returns {Promise<boolean>} True if the pipeline function is defined, false otherwise.
    */
-  static get isAvailable() {
-    return typeof pipeline === 'function';
+  static async isAvailable() {
+    return true;
   }
 
   /**
@@ -264,35 +251,38 @@ export class T5Summarizer {
    * @throws {Error} If the pipeline function is not available.
    */
   static async create({ onProgress = () => { } } = {}) {
-    if (!T5Summarizer.isAvailable) {
-      throw new Error('Transformers.js pipeline is not available.');
-    }
 
     const modelId = 'Xenova/t5-small';
     console.log(`Initializing T5 summarizer with model ID: ${modelId}`);
-    // downloads the model
+    
+    // listen for progress events
+    const listener = (message) => {
+      if (message.action === 't5:progress') {
+        onProgress(message.data);
+      }
+    };
+    
+    chrome.runtime.onMessage.addListener(listener);
+    
+    // downloads the model if necessary
     const response = await chrome.runtime.sendMessage({ action: 't5:init', modelId });
-console.log(`T5 model initialization response:`, response);
+    
+    /*
+     * If there's no response, this means the background.js script is not listening
+     * for the message. The most likely cause is that it's an older version of the file.
+     * You need to reload the extension in Chrome to update that file.
+     */
+    if (!response) {
+      throw new Error('Background did not respond to T5 initialization request. Reload extension and try again.');
+    }
+    
+    chrome.runtime.onMessage.removeListener(listener);
+    
     if (response.error) {
       throw new Error(`Failed to initialize T5 model: ${response.error}`);
     }
     
-    // // Create the summarization pipeline
-    // const summarizationPipeline = await pipeline(
-    //   'summarization',
-    //   modelId,
-    //   {
-    //     // only the "progress" event has the loaded and total properties
-    //     progress_callback(event) {
-    //       if (event.status === 'progress') {
-    //         onProgress(event);
-    //       }
-    //     },
-    //   }
-    // );
-
-    return new T5Summarizer(null);
-
+    return new T5Summarizer();
   }
 
   /**
@@ -323,6 +313,15 @@ console.log(`T5 model initialization response:`, response);
     
     return response.summary;
   }
+  
+  /**
+   * Destroys the T5Summarizer instance.
+   * @returns {void}
+   */
+  destroy() {
+    // T5Summarizer does not maintain any state that needs to be destroyed.
+    // This method is provided for consistency with other summarizers.
+  }
 }
 
 // #endregion
@@ -332,9 +331,9 @@ console.log(`T5 model initialization response:`, response);
  * The first available summarizer will be used.
  */
 const summarizers = [
-  T5Summarizer,
   // PromptApiSummarizer,
   // NativeSummarizer,
+  T5Summarizer,
 ];
 
 /**

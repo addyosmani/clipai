@@ -8,7 +8,6 @@ import { pipeline } from '@huggingface/transformers';
 // #region Constants
 
 const STORAGE_KEY = 'clipai_clips';
-const MAX_SYNC_BYTES = 102400; // 100KB limit for sync storage
 
 // #endregion
 
@@ -65,11 +64,21 @@ let summarizer;
 /**
  * Initializes the T5 model pipeline.
  * @param {string} modelId The ID of the T5 model to use.
+ * @param {Function} onProgress Callback function to handle progress events.
  * @returns {Promise<void>} The T5 model pipeline.
  */
-async function initT5Pipeline(modelId) {
+async function initT5Pipeline(modelId, onProgress) {
   try {
-    summarizer = await pipeline('summarization', modelId);
+    summarizer = await pipeline('summarization', modelId,
+      {
+        // only the "progress" event has the loaded and total properties
+        progress_callback(event) {
+          if (event.status === 'progress') {
+            onProgress(event);
+          }
+        },
+      }
+    );
   } catch (error) {
     console.error('Error initializing T5 pipeline:', error);
     throw error;
@@ -79,14 +88,23 @@ async function initT5Pipeline(modelId) {
 
 // Listen for messages from the content script or sidebar
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Received message:", message);
+  
   if (message.action.startsWith('t5:')) {
     switch (message.action) {
       case 't5:init':
         // Initialize T5 model pipeline
-        initT5Pipeline(message.modelId)
-          .then(() => sendResponse({ status: 'initialized' }))
-          .catch((error) => sendResponse({ error: error.message }));
+        initT5Pipeline(message.modelId, (event) => {
+          // Send progress updates to the sidebar
+          chrome.runtime.sendMessage({
+            action: 't5:progress',
+            data: {
+              loaded: event.loaded,
+              total: event.total,
+            }
+          });
+        })
+        .then(() => sendResponse({ status: 'initialized' }))
+        .catch((error) => sendResponse({ error: error.message }));
         return true; // Indicates async response
         
       case 't5:summarize': {
