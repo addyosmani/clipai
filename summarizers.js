@@ -93,7 +93,7 @@ export class PromptApiSummarizer {
    */
   static async create({ onProgress = () => { }, signal } = {}) {
 
-    if (!PromptApiSummarizer.isAvailable) {
+    if (!await PromptApiSummarizer.isAvailable()) {
       throw new Error('Prompt API is not available.');
     }
 
@@ -170,7 +170,7 @@ export class NativeSummarizer {
    * @throws {Error} If the native summarizer is not available.
    */
   static async create({ onProgress = () => { }, signal } = {}) {
-    if (!NativeSummarizer.isAvailable) {
+    if (!await NativeSummarizer.isAvailable()) {
       throw new Error('Native summarizer is not available.');
     }
 
