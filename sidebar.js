@@ -409,6 +409,7 @@ async function handleSummarize() {
   
   if (!signal.aborted) {
     summaryContent.innerHTML = `<p>${summary}</p>`;
+    summarizer.destroy();
   }
   
 }
