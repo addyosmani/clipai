@@ -128,11 +128,10 @@ export class PromptApiSummarizer {
       },
       signal
     });
-    await session.ready;
     
     // when the signal is aborted, destroy the session to free up resources
     signal?.addEventListener('abort', () => {
-      session.destroy();
+      this.destroy();
     });
     
     return new PromptApiSummarizer(session);
@@ -217,8 +216,8 @@ export class NativeSummarizer {
 
     // when the signal is aborted, destroy the session to free up resources
     signal?.addEventListener('abort', () => {
-      summarizer.destroy();
-    });    
+      this.destroy();
+    });
 
     return new NativeSummarizer(summarizer);
   }
