@@ -83,7 +83,12 @@ export class PromptApiSummarizer {
    * @returns {Promise<boolean>} True if the summarizer is available, false otherwise.
    */
   static async isAvailable() {
-    return Boolean(await chrome.aiOriginTrial?.languageModel?.availability() === "available");
+    if (chrome.aiOriginTrial?.languageModel?.availability) {
+      const availability = await chrome.aiOriginTrial.languageModel.availability();
+      return availability !== "no";
+    }
+    
+    return false;
   }
 
   /**
@@ -160,7 +165,12 @@ export class NativeSummarizer {
    * @returns {Promise<boolean>} True if the native summarizer is available, false otherwise.
    */
   static async isAvailable() {
-    return Boolean(await globalThis.Summarizer?.availability?.() === "available");
+    if (globalThis.Summarizer?.availability) {
+      const availability = await globalThis.Summarizer.availability();
+      return availability !== "no";
+    }
+    
+    return false;
   }
 
   /**
