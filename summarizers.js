@@ -276,6 +276,19 @@ const summarizers = [
 ];
 
 /**
+ * Checks if any summarizer is available.
+ * @returns {Promise<boolean>} A promise that resolves to true if any summarizer is available, false otherwise.
+ */
+export async function isSummarizerAvailable() {
+  for (const summarizerClass of summarizers) {
+    if (await summarizerClass.isAvailable()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Creates a summarizer instance based on availability.
  * @param {SummarizerOptions} options - Options for creating the summarizer.
  * @returns {Promise<PromptApiSummarizer|NativeSummarizer>} A promise that resolves to an instance of a summarizer.
