@@ -80,10 +80,15 @@ export class PromptApiSummarizer {
 
   /**
    * Checks if the Prompt API is available.
-   * @returns {boolean} True if the summarizer is available, false otherwise.
+   * @returns {Promise<boolean>} True if the summarizer is available, false otherwise.
    */
-  static get isAvailable() {
-    return Boolean(chrome.aiOriginTrial?.languageModel?.create);
+  static async isAvailable() {
+    if (chrome.aiOriginTrial?.languageModel?.availability) {
+      const availability = await chrome.aiOriginTrial.languageModel.availability();
+      return availability !== "no";
+    }
+    
+    return false;
   }
 
   /**
@@ -93,7 +98,7 @@ export class PromptApiSummarizer {
    */
   static async create({ onProgress = () => { }, signal } = {}) {
 
-    if (!PromptApiSummarizer.isAvailable) {
+    if (!await PromptApiSummarizer.isAvailable()) {
       throw new Error('Prompt API is not available.');
     }
 
@@ -125,6 +130,16 @@ export class PromptApiSummarizer {
 
     return this.#session.prompt(`Summarize these paragraphs into a single paragraph of no more than five sentences:\n\n${input}`, { signal });
   }
+  
+  /**
+   * Destroys the session, releasing any resources.
+   * @returns {void}
+   */
+  destroy() {
+    if (this.#session) {
+      this.#session.destroy();
+    }
+  }
 }
 
 // #endregion
@@ -147,10 +162,15 @@ export class NativeSummarizer {
 
   /**
    * Checks if the native summarizer is available.
-   * @returns {boolean} True if the native summarizer is available, false otherwise.
+   * @returns {Promise<boolean>} True if the native summarizer is available, false otherwise.
    */
-  static get isAvailable() {
-    return Boolean(globalThis.Summarizer);
+  static async isAvailable() {
+    if (globalThis.Summarizer?.availability) {
+      const availability = await globalThis.Summarizer.availability();
+      return availability !== "no";
+    }
+    
+    return false;
   }
 
   /**
@@ -160,7 +180,7 @@ export class NativeSummarizer {
    * @throws {Error} If the native summarizer is not available.
    */
   static async create({ onProgress = () => { }, signal } = {}) {
-    if (!NativeSummarizer.isAvailable) {
+    if (!await NativeSummarizer.isAvailable()) {
       throw new Error('Native summarizer is not available.');
     }
 
@@ -197,6 +217,17 @@ export class NativeSummarizer {
 
     return this.#summarizer.summarize(input);
   }
+  
+  /**
+   * Destroys the session, releasing any resources.
+   * @returns {void}
+   */
+  destroy() {
+    if (this.#summarizer) {
+      this.#summarizer.destroy();
+    }
+  }
+  
 }
 
 // #endregion
@@ -219,7 +250,7 @@ const summarizers = [
 export async function createSummarizer({ onProgress = () => { }, signal } = {}) {
   
   for (const summarizerClass of summarizers) {
-    if (summarizerClass.isAvailable) {
+    if (await summarizerClass.isAvailable()) {
       try {
         // must be return await to catch the error in this function
         return await summarizerClass.create({ onProgress, signal });
