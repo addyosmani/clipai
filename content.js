@@ -151,7 +151,7 @@ function getMainContent() {
   const mainContentClone = mainContent.cloneNode(true);
   
   // Remove unwanted content
-  mainContentClone.querySelectorAll('script, style, pre, picture, aside').forEach(el => el.remove());
+  mainContentClone.querySelectorAll('script, style, pre, picture, aside, form, .ad, nav, ul, ol, figure').forEach(el => el.remove());
 
   // collapse whitespace
   return mainContentClone.textContent.replace(/\s+/g, ' ').trim();

@@ -6,9 +6,8 @@
 const SYSTEM_PROMPT = `
 You are a summarizer that creates clear, concise, short summaries of articles.
 
-You will be given content from a webpage content. Produce a one-paragraph summary.
-The maximum length of the paragraph is 5 sentences and must be
-written in the third person.
+You will be given content from a webpage content. Produce a summary written
+in the third person, focusing on the main points and key details.
 
 Produce output in plain text.
 `;
@@ -25,8 +24,11 @@ Produce output in plain text.
  * @property {(DownloadProgressEvent) => void} [onProgress] - A callback function to handle progress updates.
  * @property {AbortSignal} [signal] - An optional AbortSignal to cancel the operation.
  * 
+ * @typedef {"short" | "medium" | "long"} SummaryLength
+ * 
  * @typedef {Object} SummarizeOptions
  * @property {AbortSignal} [signal] - An optional AbortSignal to cancel the operation.
+ * @property {SummaryLength} [length='medium'] - The desired length of the summary.
  * 
  * @typedef {Object} PromptApiSession
  * @property {(string, SummarizeOptions?) => Promise<string>} prompt - A function to send a prompt to the session.
@@ -34,6 +36,7 @@ Produce output in plain text.
  * 
  * @typedef {Object} ChromeSummarizer
  * @property {(string) => Promise<string>} summarize - A function to summarize the input string.
+ * 
  */
 
 // #endregion
@@ -59,6 +62,27 @@ function assertValidInput(input) {
 // #endregion
 
 // region PromptApiSummarizer
+
+/**
+ * Generates a prompt for the Prompt API summarizer based on the desired summary length.
+ * @param {SummaryLength} length - The desired length of the summary.
+ * @param {string} input - The content to summarize.
+ * @returns {string} The generated prompt for the summarizer.
+ * @throws {Error} If the length is invalid.
+ */
+function getPromptApiPrompt(length, input) {
+  
+  switch (length) {
+    case 'short':
+      return `Summarize this article into a single sentence:\n\n${input}`;
+    case 'medium':
+      return `Summarize this article into at most five sentences and at most 300 characters:\n\n${input}`;
+    case 'long':
+      return `Summarize this article into a detailed summary:\n\n${input}`;
+    default:
+      throw new Error(`Invalid summary length: ${length}`);
+  }
+}
 
 /**
  * Class representing a summarizer using the Prompt API.
@@ -109,7 +133,12 @@ export class PromptApiSummarizer {
       },
       signal
     });
-    await session.ready;
+    
+    // when the signal is aborted, destroy the session to free up resources
+    signal?.addEventListener('abort', () => {
+      this.destroy();
+    });
+    
     return new PromptApiSummarizer(session);
   }
 
@@ -120,7 +149,7 @@ export class PromptApiSummarizer {
    * @returns {Promise<string>} A promise that resolves to the summary of the input.
    * @throws {Error} If the session is not initialized or if the input is invalid.
    */
-  async summarize(input, { signal } = {}) {
+  async summarize(input, { signal, length = 'medium' } = {}) {
 
     if (!this.#session) {
       throw new Error('Session is not initialized.');
@@ -128,7 +157,7 @@ export class PromptApiSummarizer {
 
     assertValidInput(input);
 
-    return this.#session.prompt(`Summarize these paragraphs into a single paragraph of no more than five sentences:\n\n${input}`, { signal });
+    return this.#session.prompt(getPromptApiPrompt(length, input), { signal });
   }
   
   /**
@@ -179,7 +208,7 @@ export class NativeSummarizer {
    * @returns {Promise<NativeSummarizer>} A promise that resolves to a new instance of NativeSummarizer.
    * @throws {Error} If the native summarizer is not available.
    */
-  static async create({ onProgress = () => { }, signal } = {}) {
+  static async create({ onProgress = () => { }, signal, length = 'medium' } = {}) {
     if (!await NativeSummarizer.isAvailable()) {
       throw new Error('Native summarizer is not available.');
     }
@@ -188,11 +217,16 @@ export class NativeSummarizer {
       format: 'plain-text',
       type: 'tl;dr',
       sharedContext: 'An article from a webpage.',
-      length: 'medium',
+      length,
       monitor(m) {
         m.addEventListener('downloadprogress', onProgress);
       },
       signal
+    });
+
+    // when the signal is aborted, destroy the session to free up resources
+    signal?.addEventListener('abort', () => {
+      this.destroy();
     });
 
     return new NativeSummarizer(summarizer);
