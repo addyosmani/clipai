@@ -67,13 +67,13 @@ function filterAndSortClips() {
 
 /**
  * Delete a clip by its ID.
- * @param {number} clipId The ID of the clip to delete.
+ * @param {string} clipTimestamp The timestamp of the clip to delete
  * @returns {void}
  */
-function deleteClip(clipId) {
-  clips.splice(clipId, 1);
+function deleteClip(clipTimestamp) {
+  const clipIndex = clips.findIndex(clip => clip.timestamp === clipTimestamp);
+  clips.splice(clipIndex, 1);
   chrome.storage.local.set({ clipai_clips: clips });
-  renderClips();
 }
 
 // #endregion
@@ -86,7 +86,7 @@ function deleteClip(clipId) {
  * @param {number} index The index of the clip. Used for deleting.
  * @returns {HTMLElement} The card element.
  */
-function createClipCard(clip, index) {
+function createClipCard(clip) {
   const card = document.createElement('div');
   card.className = 'clip-card';
 
@@ -110,7 +110,7 @@ function createClipCard(clip, index) {
       </div>
       <div class="clip-toolbar">
         <div class="clip-date">${new Date(clip.timestamp).toLocaleDateString()}</div>
-        <button class="delete-clip" title="Delete clip" data-clip-id="${index}">
+        <button class="delete-clip" title="Delete clip" data-clip-timestamp="${clip.timestamp}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6h18"></path>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
@@ -124,9 +124,10 @@ function createClipCard(clip, index) {
   card.addEventListener('click', event => {
     
     if (event.target.matches('.delete-clip *')) {
-      const clipId = event.target.dataset.clipId;
-      deleteClip(clipId);
+      const clipTimestamp = event.target.dataset.clipTimestamp;
+      deleteClip(clipTimestamp);
       event.stopPropagation();
+      event.target.closest('.clip-card').remove();
       return;
     }
     
@@ -154,8 +155,8 @@ function renderClips() {
   container.innerHTML = '';
   
   const filteredClips = filterAndSortClips();
-  filteredClips.forEach((clip, index) => {
-    container.appendChild(createClipCard(clip, index));
+  filteredClips.forEach((clip) => {
+    container.appendChild(createClipCard(clip));
   });
 }
 
