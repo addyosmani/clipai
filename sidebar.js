@@ -2,7 +2,7 @@
  * @fileoverview The script that runs the sidebar for ClipAI.
  */
 
-import { createSummarizer } from './summarizers.js';
+import { createSummarizer, isSummarizerAvailable } from './summarizers.js';
 
 // #region Global Variables
 
@@ -22,6 +22,13 @@ const SUMMARIZE_LOADING = `
 `;
 
 // #endregion
+
+// show Summarize button if summarizer is available
+(async () => {
+  if (await isSummarizerAvailable()) {
+    document.getElementById('summarize').style.display = '';
+  }
+})();
 
 // #region Clip Management
 
