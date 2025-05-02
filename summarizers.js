@@ -109,7 +109,7 @@ export class PromptApiSummarizer {
   static async isAvailable() {
     if (chrome.aiOriginTrial?.languageModel?.availability) {
       const availability = await chrome.aiOriginTrial.languageModel.availability();
-      return availability !== "no";
+      return availability !== "unavailable";
     }
     
     return false;
@@ -136,7 +136,7 @@ export class PromptApiSummarizer {
     
     // when the signal is aborted, destroy the session to free up resources
     signal?.addEventListener('abort', () => {
-      this.destroy();
+      session.destroy();
     });
     
     return new PromptApiSummarizer(session);
@@ -196,7 +196,7 @@ export class NativeSummarizer {
   static async isAvailable() {
     if (globalThis.Summarizer?.availability) {
       const availability = await globalThis.Summarizer.availability();
-      return availability !== "no";
+      return availability !== "unavailable";
     }
     
     return false;
@@ -226,7 +226,7 @@ export class NativeSummarizer {
 
     // when the signal is aborted, destroy the session to free up resources
     signal?.addEventListener('abort', () => {
-      this.destroy();
+      summarizer.destroy();
     });
 
     return new NativeSummarizer(summarizer);
