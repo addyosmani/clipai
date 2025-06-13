@@ -2,6 +2,8 @@
 
 A Chrome extension that makes it easy to bookmark entire pages or clip specific elements from web pages. Perfect for research, saving articles, collecting design inspiration, or building a personal knowledge base.
 
+![Image](https://github.com/user-attachments/assets/df96135f-454c-416a-b415-f0266ed41123)
+
 ## Features
 
 ### 🔖 Page Bookmarking
