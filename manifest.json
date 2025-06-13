@@ -31,6 +31,7 @@
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
+    "64": "icons/icon64.png",
     "128": "icons/icon128.png"
   },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuVYku+SROuy6RL7YwwdPczYxf+fvPewmZbIucONO7xzGHFP7q7WMWgm/kJEOYLWdRkfbrJMXiAsb3bXupdD3u/SS9tBiDUuwnTCvhaYms37PfTVIsHlxmJagQusW+j60gZglzJZoKCJQQ7l3OEXQtELdOmWfhfx6hSaSeWCUzDOuJ7PyEuLiIjvrIXhKGgRz8XRPKmhovtIqAFpQi4krXTRuSp3VDHjkXCLJDxkNRtMXSmOougzEBzG1Psq7yAzJYuthzHdXYvsA59rLVlf94o++hoLXB4DiJZig7rGzzyVgNAdUoJJajiMNcWAKAvrQu0SOo6zZ+u9IZGLhtZywzQIDAQAB",
